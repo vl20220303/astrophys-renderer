@@ -123,8 +123,8 @@ public class Particle{
 
     public void update(){
         if(fixed) return;
-        vel = vel.add(accel);
         pos = pos.add(vel);
+        vel = vel.add(accel);
     }
 
     public void clearAccel(){

@@ -16,7 +16,7 @@ public class Environment {
     public static final boolean DRAW_ORIGIN_GRID = true; //draws xy plane
     public static final boolean DRAW_MINI_ORIGIN = true; //draws origin axes reference in top right
 
-    public static final Color BACKGROUND_COLOR = Color.BLACK;
+    public static final Color BACKGROUND_COLOR = Color.WHITE;
 
     public static final boolean GRAVITY_ENABLED = true;
 

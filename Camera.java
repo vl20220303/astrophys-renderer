@@ -37,14 +37,14 @@ public class Camera {
 
         Vector origin = pos.add(shiftVec.scale(zoom)).add(normal.scale(zoom));
         zoom = Math.max(zoom*Math.pow(1.05, ticks), 0.00000001);
-        pos = origin.subtract(normal.scale(zoom));
+        pos = origin.subtract((normal.scale(zoom)).add((shiftVec).scale(zoom)));
     }
 
     public void shift(double x, double y) { // pan by given x,y on-screen/relative to screen
         x*=SHIFT_PER_TICK; y*=SHIFT_PER_TICK;
-
-        if(view.equals("orthogonal")){
-            x*=zoom; y*=zoom;
+        x*=zoom; y*=zoom;
+        if(view.equals("perspective")){
+            x/=100; y/=100;
         }
 
         Vector up = new Vector(0, 1, 0);
@@ -66,11 +66,12 @@ public class Camera {
         pos = origin.subtract(normal.scale(zoom));
     }
 
-    public void render(ArrayList<Particle> particles, Graphics2D g){
+    public void render(ArrayList<Particle> particles, Graphics2D g){   
+
         particles.sort((a, b) -> {
             double da = a.pos.subtract(pos).dot(normal);
             double db = b.pos.subtract(pos).dot(normal);
-            return Double.compare(db, da);
+            return view.equals("orthogonal") ? Double.compare(db, da) : Double.compare(db-((b.rad*b.rad)/db), da-((a.rad*a.rad)/da));
         });
 
         Vector up = new Vector(0, 1, 0);
@@ -82,8 +83,6 @@ public class Camera {
 
             double depth = rel.dot(normal);
             
-
-
             double x = rel.dot(right), y = rel.dot(up), r = p.rad;
 
             if (view.equals("orthogonal")){
@@ -94,18 +93,17 @@ public class Camera {
             }
 
             if (view.equals("perspective")) {
-                if (depth-r > 0) {
+                if (depth > 0) {
                     x /= (depth);
                     y /= (depth);
                     r = Math.min(Math.sqrt(r*r - (r*r*r*r)/(depth*depth))/(depth - (r*r)/depth), 100000);
-                } else if(depth>-r && depth<r){
-                    r = 1000000;
+                } else if(depth==0){
+                    r = 100000;
                 } else{
                     r = 0;
                 }
                 x *= 100; y *= 100; r *= 100;
             }
-
             
             g.setColor(p.luminosity);
             if(p.shape.equals("circle")){
