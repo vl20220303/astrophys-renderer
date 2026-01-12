@@ -18,11 +18,11 @@ public class Camera {
 
     public Camera(Vector pos, Vector normal, boolean usePerspective){
         this.pos = pos; this.normal = normal.normalize(); this.usePerspective = usePerspective;
-        zoom = 1;
+        zoom = normal.abs();
     }
 
     public Camera(Vector pos, boolean usePerspective){
-        this(pos, pos.normalize().scale(-1), usePerspective);
+        this(pos, pos.scale(-1), usePerspective);
         zoom = pos.subtract(normal).abs();
     }
 
@@ -38,7 +38,7 @@ public class Camera {
 
         Vector origin = pos.add(shiftVec.scale(zoom)).add(normal.scale(zoom));
         zoom = Math.max(zoom*Math.pow(1.05, ticks), 0.00000001);
-        pos = origin.subtract(normal.scale(zoom).add(shiftVec).scale(zoom));
+        pos = origin.subtract((normal.scale(zoom)).add((shiftVec).scale(zoom)));
     }
 
     public void shift(double x, double y) { // pan by given x,y on-screen/relative to screen

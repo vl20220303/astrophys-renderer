@@ -14,7 +14,6 @@ public class Renderer extends JPanel implements MouseListener, MouseMotionListen
     public Renderer() {
         //this.camera = new Camera(new Vector(0, 0, 500), new Vector(0, 0, -1), false);
         this.camera = new Camera(new Vector(0, 0, 1000), true);
-        camera.zoom = 350;
         particles = new ArrayList<>();
         lightSources = new ArrayList<>();
 
