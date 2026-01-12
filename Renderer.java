@@ -12,20 +12,23 @@ public class Renderer extends JPanel implements MouseListener, MouseMotionListen
     private boolean leftDown = false, rightDown = false;
 
     public Renderer() {
-        //camera = new Camera(new Vector(0, -30, 40), new Vector(0, 0, -1), "perspective");
-        this.camera = new Camera(new Vector(0, 0, 1000), "perspective");
-        //camera.zoom = 0.25;
+        //this.camera = new Camera(new Vector(0, 0, 500), new Vector(0, 0, -1), false);
+        this.camera = new Camera(new Vector(0, 0, 1000), true);
+        camera.zoom = 350;
         particles = new ArrayList<>();
         lightSources = new ArrayList<>();
 
 
         // Example: add some particles
         particles.add(new Particle(new Vector(0,0, 0), 300, 1.98e5, "circle", new Vector(0,0,0), Color.BLACK, true, "collide"));
-        particles.add(new Particle(new Vector(0, 400, 0), 100, 3.29e-2, "circle", new Vector(0,0,0), Color.RED, true, "none"));
-        // particles.add(new Particle(new Vector(0, 120, 450), 80, 3.29e-2, "circle", new Vector(9,1,0), Color.BLUE, false, "none"));
+        // particles.add(new Particle(new Vector(0, 500, 0), 100, 3.29e5, "circle", new Vector(0,0,0), Color.RED, false, "collide"));
+        // particles.add(new Particle(new Vector(0, 900, 0), 100, 3.29e1, "circle", new Vector(0,0,0), Color.BLUE, false, "collide"));
+        particles.add(new Particle(new Vector(0, 120, 450), 80, 3.29e3, "circle", new Vector(9,1,0), Color.BLUE, false, "none"));
         // particles.add(new Particle(new Vector(300, 0, 500), 120, 3.29e-2, "circle", new Vector(10,0,0), Color.GREEN, false, "none"));
         // particles.add(new Particle(new Vector(380, 0, 500), 40, 3.29e-2, "circle", new Vector(9,1,0), Color.GRAY, false, "none"));
 
+        Constants.init();
+        
         setPreferredSize(new Dimension((int) (Environment.RESOLUTION* Environment.ASPECT_RATIO), Environment.RESOLUTION));
         setBackground(Environment.BACKGROUND_COLOR);
 

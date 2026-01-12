@@ -116,15 +116,15 @@ public class Particle{
 
         double distSquared = (dist + overlap/2) * (dist + overlap/2);
 
-        Vector gravity = displacement.normalize().scale((Environment.GRAV_CONST * this.mass * other.mass) / distSquared);
+        Vector gravity = displacement.normalize().scale((Constants.GRAV_CONST * this.mass * other.mass) / distSquared);
         if(!this.fixed) this.accel = this.accel.subtract(gravity.scale(1/this.mass));
         if(!other.fixed) other.accel = other.accel.add(gravity.scale(1/other.mass));
     }
 
     public void update(){
         if(fixed) return;
-        pos = pos.add(vel);
         vel = vel.add(accel);
+        pos = pos.add(vel);
     }
 
     public void clearAccel(){

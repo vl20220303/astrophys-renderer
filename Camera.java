@@ -12,17 +12,18 @@ public class Camera {
     public static final double PERSPECTIVE_MIN_DEPTH = 0.00001;
 
     public Vector normal, pos;
-    public String view; //perspective, orthagonal
+    public boolean usePerspective; //perspective, orthagonal
     public double zoom;
     public double rotation;
 
-    public Camera(Vector pos, Vector normal, String view){
-        this.pos = pos; this.normal = normal.normalize(); this.view = view;
+    public Camera(Vector pos, Vector normal, boolean usePerspective){
+        this.pos = pos; this.normal = normal.normalize(); this.usePerspective = usePerspective;
         zoom = 1;
     }
 
-    public Camera(Vector pos, String view){
-        this(pos, pos.normalize().scale(-1), view);
+    public Camera(Vector pos, boolean usePerspective){
+        this(pos, pos.normalize().scale(-1), usePerspective);
+        zoom = pos.subtract(normal).abs();
     }
 
     public void zoom(double ox, double oy, double ticks) { // zoom in/out by given mouse-ticks
@@ -37,13 +38,13 @@ public class Camera {
 
         Vector origin = pos.add(shiftVec.scale(zoom)).add(normal.scale(zoom));
         zoom = Math.max(zoom*Math.pow(1.05, ticks), 0.00000001);
-        pos = origin.subtract((normal.scale(zoom)).add((shiftVec).scale(zoom)));
+        pos = origin.subtract(normal.scale(zoom).add(shiftVec).scale(zoom));
     }
 
     public void shift(double x, double y) { // pan by given x,y on-screen/relative to screen
         x*=SHIFT_PER_TICK; y*=SHIFT_PER_TICK;
         x*=zoom; y*=zoom;
-        if(view.equals("perspective")){
+        if(usePerspective){
             x/=100; y/=100;
         }
 
@@ -71,7 +72,7 @@ public class Camera {
         particles.sort((a, b) -> {
             double da = a.pos.subtract(pos).dot(normal);
             double db = b.pos.subtract(pos).dot(normal);
-            return view.equals("orthogonal") ? Double.compare(db, da) : Double.compare(db-((b.rad*b.rad)/db), da-((a.rad*a.rad)/da));
+            return !usePerspective ? Double.compare(db, da) : Double.compare(db-((b.rad*b.rad)/db), da-((a.rad*a.rad)/da));
         });
 
         Vector up = new Vector(0, 1, 0);
@@ -85,14 +86,14 @@ public class Camera {
             
             double x = rel.dot(right), y = rel.dot(up), r = p.rad;
 
-            if (view.equals("orthogonal")){
+            if (!usePerspective){
                 if(r/zoom > Environment.RESOLUTION * Environment.ASPECT_RATIO) continue;
                 x /= zoom;
                 y /= zoom;
                 r /= zoom;
             }
 
-            if (view.equals("perspective")) {
+            if (usePerspective) {
                 if (depth > 0) {
                     x /= (depth);
                     y /= (depth);
@@ -118,13 +119,13 @@ public class Camera {
         double step = 20;
 
         for (double x = gridMin + step; x <= gridMax - step; x += step) {
-            Point[] line = projectLineToScreen(new Vector(x, gridMin, 0), new Vector(x, gridMax, 0), view);
+            Point[] line = projectLineToScreen(new Vector(x, gridMin, 0), new Vector(x, gridMax, 0));
             if(line == null) continue;
             g.setColor(Color.ORANGE);
             g.drawLine(line[0].x, line[0].y, line[1].x, line[1].y);
         }
         for (double y = gridMin + step; y <= gridMax - step; y += step) {
-            Point[] line = projectLineToScreen(new Vector(gridMin, y, 0), new Vector(gridMax, y, 0), view);
+            Point[] line = projectLineToScreen(new Vector(gridMin, y, 0), new Vector(gridMax, y, 0));
             if(line == null) continue;
             g.setColor(Color.ORANGE);
             g.drawLine(line[0].x, line[0].y, line[1].x, line[1].y);
@@ -152,7 +153,7 @@ public class Camera {
         lines.sort((a, b) -> Double.compare(b.dist, a.dist));
 
         for (Line l : lines) {
-            Point[] line = projectLineToScreen(Vector.ORIGIN, l.end, view);
+            Point[] line = projectLineToScreen(Vector.ORIGIN, l.end);
             if(line == null) continue;
             g.setColor(l.color);
             g.drawLine(line[0].x, line[0].y, line[1].x, line[1].y);
@@ -187,7 +188,7 @@ public class Camera {
     }
 
     //proj 3d line to 2d surface, clipped
-    private Point[] projectLineToScreen(Vector p, Vector q, String view) {
+    private Point[] projectLineToScreen(Vector p, Vector q) {
         Vector up = new Vector(0, 1, 0);
         Vector right = normal.cross(up).normalize();
         up = right.cross(normal).normalize();
@@ -198,12 +199,12 @@ public class Camera {
         double qDepth = qRel.dot(normal);
 
         //line behind plane
-        if (pDepth < 0 && qDepth < 0 && view.equals("perspective")) {
+        if (pDepth < 0 && qDepth < 0 && usePerspective) {
             return null;
         }
 
         //clip line
-        if ((pDepth < 0 || qDepth < 0) && view.equals("perspective")) {
+        if ((pDepth < 0 || qDepth < 0) && usePerspective) {
             double t = pDepth / (pDepth - qDepth);
             if (pDepth < 0) {
                 pRel = pRel.add(qRel.subtract(pRel).scale(t));
@@ -220,12 +221,12 @@ public class Camera {
         double qx = qRel.dot(right);
         double qy = qRel.dot(up);
 
-        if (view.equals("orthogonal")) {
+        if (!usePerspective) {
             px /= zoom; py /= zoom;
             qx /= zoom; qy /= zoom;
         }
 
-        if (view.equals("perspective")) {
+        if (usePerspective) {
             px /= pDepth / 100; py /= pDepth / 100;
             qx /= qDepth / 100; qy /= qDepth / 100;
         }
