@@ -1,74 +1,43 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
 import java.util.ArrayList;
 
-public class Renderer extends JPanel implements MouseListener, MouseMotionListener, MouseWheelListener {
-    public Camera camera;
-    public ArrayList<Particle> particles;
-    public ArrayList<Particle> lightSources;
+public class Renderer extends JPanel {
+    private final Camera camera;
+    private final Display display;
+    private final Simulator simulator;
 
-    private Point lastMouse;
-    private boolean leftDown = false, rightDown = false;
-
-    public Renderer() {
-        //this.camera = new Camera(new Vector(0, 0, 500), new Vector(0, 0, -1), false);
-        this.camera = new Camera(new Vector(0, 0, 1000), true);
-        particles = new ArrayList<>();
-        lightSources = new ArrayList<>();
-
-
-        // Example: add some particles
-        particles.add(new Particle(new Vector(0,0, 0), 300, 1.98e5, "circle", new Vector(0,0,0), Color.BLACK, true, "collide"));
-        // particles.add(new Particle(new Vector(0, 500, 0), 100, 3.29e5, "circle", new Vector(0,0,0), Color.RED, false, "collide"));
-        // particles.add(new Particle(new Vector(0, 900, 0), 100, 3.29e1, "circle", new Vector(0,0,0), Color.BLUE, false, "collide"));
-        particles.add(new Particle(new Vector(0, 120, 450), 80, 3.29e3, "circle", new Vector(9,1,0), Color.BLUE, false, "none"));
-        // particles.add(new Particle(new Vector(300, 0, 500), 120, 3.29e-2, "circle", new Vector(10,0,0), Color.GREEN, false, "none"));
-        // particles.add(new Particle(new Vector(380, 0, 500), 40, 3.29e-2, "circle", new Vector(9,1,0), Color.GRAY, false, "none"));
-
-        Constants.init();
-        
-        setPreferredSize(new Dimension((int) (Environment.RESOLUTION* Environment.ASPECT_RATIO), Environment.RESOLUTION));
-        setBackground(Environment.BACKGROUND_COLOR);
-
-        addMouseListener(this);
-        addMouseMotionListener(this);
-        addMouseWheelListener(this);
-
-        Timer timer = new Timer(Environment.TICK_SPEED, e -> {
-            update();
-            repaint();
-        });
-        timer.start();
+    public Renderer(Camera camera, Simulator simulator) {
+        this.camera = camera;
+        this.display = new Display(camera);
+        this.simulator = simulator;
     }
 
-    public static void main(String[] args) {
-        JFrame frame = new JFrame("Astrophys Renderer");
-        Renderer renderer = new Renderer();
+    public Renderer(Camera camera, Simulator simulator, Display display) {
+        this.camera = camera;
+        this.display = display;
+        this.simulator = simulator;
+    }
+
+    public void init(JFrame frame){
+        setPreferredSize(new Dimension((int) (Environment.RESOLUTION * Environment.ASPECT_RATIO), Environment.RESOLUTION));
+        setBackground(Environment.BACKGROUND_COLOR);
+
+        new Controls(camera, this);
+
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.add(renderer);
+        frame.add(this);
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 
-    public void update() {
-        if(Environment.GRAVITY_ENABLED){
-            for (int i = 0; i < particles.size(); i++) {
-                for (int j = i + 1; j < particles.size(); j++) {
-                    particles.get(i).gravitate(particles.get(j));
-                }
-            }
-        }
-        for (int i = 0; i < particles.size(); i++) {
-            for (int j = i + 1; j < particles.size(); j++) {
-                particles.get(i).collide(particles.get(j));
-            }
-        }
-        for (Particle p : particles) {
-            p.update();
-            p.clearAccel();
-        }
+    public void run(){
+        Thread simulatorThread = new Thread(simulator);
+        simulatorThread.start();
+
+        Timer timer = new Timer(Environment.TICK_SPEED, e -> repaint());
+        timer.start();
     }
 
     @Override
@@ -78,55 +47,22 @@ public class Renderer extends JPanel implements MouseListener, MouseMotionListen
         g2d.translate(getWidth() / 2, getHeight() / 2);
         g2d.scale(1, -1);
 
-        if(Environment.ANTIALIASING_ENABLED) g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        
-        if(Environment.DRAW_ORIGIN_GRID) camera.drawGrid(g2d);
+        g2d.scale(camera.scale, camera.scale);
 
-        if(Environment.DRAW_ORIGIN) camera.drawOrigin(g2d);
+        if (Environment.ANTIALIASING_ENABLED) g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        if(Environment.DRAW_MINI_ORIGIN) camera.drawMiniOrigin(g2d);
-        
+        if (Environment.DRAW_ORIGIN_GRID) camera.drawGrid(g2d);
+
+        if (Environment.DRAW_ORIGIN) camera.drawOrigin(g2d);
+
+        ArrayList<Particle> particles = simulator.getParticles();
         camera.render(particles, g2d);
+
+        g2d.scale(1/camera.scale, 1/camera.scale);
+        
+        display.drawZoomIndicator(g2d);
+        display.drawMiniOrigin(g2d);
 
         g2d.dispose();
     }
-
-    // Mouse events for pan (left), rotate (right), zoom (wheel)
-    @Override
-    public void mousePressed(MouseEvent e) {
-        lastMouse = e.getPoint();
-        if (SwingUtilities.isLeftMouseButton(e)) leftDown = true;
-        if (SwingUtilities.isRightMouseButton(e)) rightDown = true;
-    }
-
-    @Override
-    public void mouseReleased(MouseEvent e) {
-        if (SwingUtilities.isLeftMouseButton(e)) leftDown = false;
-        if (SwingUtilities.isRightMouseButton(e)) rightDown = false;
-    }
-
-    @Override
-    public void mouseDragged(MouseEvent e) {
-        int dx = e.getX() - lastMouse.x;
-        int dy = e.getY() - lastMouse.y;
-        if (leftDown) {
-            camera.shift(-dx, dy);
-        } else if (rightDown) {
-            camera.orbit(lastMouse.x, lastMouse.y, -dx, dy);
-        }
-        lastMouse = e.getPoint();
-        repaint();
-    }
-
-    @Override
-    public void mouseWheelMoved(MouseWheelEvent e) {
-        camera.zoom(e.getPoint().getX() - getWidth()/2, e.getPoint().getY() - getHeight()/2, -e.getPreciseWheelRotation());
-        repaint();
-    }
-
-    // Unused mouse events
-    @Override public void mouseMoved(MouseEvent e) {}
-    @Override public void mouseClicked(MouseEvent e) {}
-    @Override public void mouseEntered(MouseEvent e) {}
-    @Override public void mouseExited(MouseEvent e) {}
 }

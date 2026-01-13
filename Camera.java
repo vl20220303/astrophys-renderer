@@ -8,22 +8,20 @@ public class Camera {
     public static final double ZOOM_PER_TICK = 0.5;
     public static final double SHIFT_PER_TICK = 1;
     public static final double ROTATE_PER_TICK = 0.001;
-    
-    public static final double PERSPECTIVE_MIN_DEPTH = 0.00001;
 
     public Vector normal, pos;
-    public boolean usePerspective; //perspective, orthagonal
+    public boolean usePerspective;
     public double zoom;
+    public double scale = 1;
     public double rotation;
 
     public Camera(Vector pos, Vector normal, boolean usePerspective){
         this.pos = pos; this.normal = normal.normalize(); this.usePerspective = usePerspective;
-        zoom = normal.abs();
+        this.zoom = normal.abs();
     }
 
     public Camera(Vector pos, boolean usePerspective){
         this(pos, pos.scale(-1), usePerspective);
-        zoom = pos.subtract(normal).abs();
     }
 
     public void zoom(double ox, double oy, double ticks) { // zoom in/out by given mouse-ticks
@@ -41,18 +39,23 @@ public class Camera {
         pos = origin.subtract((normal.scale(zoom)).add((shiftVec).scale(zoom)));
     }
 
-    public void shift(double x, double y) { // pan by given x,y on-screen/relative to screen
-        x*=SHIFT_PER_TICK; y*=SHIFT_PER_TICK;
-        x*=zoom; y*=zoom;
+    public void scale(double ticks) { // scale the image by given mouse-ticks
+        ticks*=ZOOM_PER_TICK;
+        scale = Math.max(scale+ticks, 0.00000001);
+    }
+
+    public void shift(double dx, double dy) { // pan by given x,y on-screen/relative to screen
+        dx*=SHIFT_PER_TICK; dy*=SHIFT_PER_TICK;
+        dx*=zoom; dy*=zoom;
         if(usePerspective){
-            x/=100; y/=100;
+            dx/=100; dy/=100;
         }
 
         Vector up = new Vector(0, 1, 0);
         Vector right = normal.cross(up).normalize();
         up = right.cross(normal).normalize();
 
-        Vector shiftVec = right.scale(x).add(up.scale(y));
+        Vector shiftVec = right.scale(dx).add(up.scale(dy));
 
         pos = pos.add(shiftVec);
     }
@@ -61,18 +64,22 @@ public class Camera {
         dx*=ROTATE_PER_TICK; dy*=ROTATE_PER_TICK; ox*=zoom; oy*=zoom;
         Vector up = new Vector(0, 1, 0);
         Vector right = normal.cross(up).normalize();
+        
+        if(1-Math.pow(normal.dot(up),2) < Math.pow(dy, 2)) {
+            dy*=Math.max(0, -Math.signum(normal.dot(up)*dy));
+        }
 
         Vector origin = pos.add(normal.scale(zoom));
         normal = normal.rotateAroundAxis(up, dx).rotateAroundAxis(right, dy).normalize();
         pos = origin.subtract(normal.scale(zoom));
     }
-
-    public void render(ArrayList<Particle> particles, Graphics2D g){   
+    
+    public void render(ArrayList<Particle> particles, Graphics2D g){
 
         particles.sort((a, b) -> {
             double da = a.pos.subtract(pos).dot(normal);
             double db = b.pos.subtract(pos).dot(normal);
-            return !usePerspective ? Double.compare(db, da) : Double.compare(db-((b.rad*b.rad)/db), da-((a.rad*a.rad)/da));
+            return usePerspective ? Double.compare(db-((b.rad*b.rad)/db), da-((a.rad*a.rad)/da)) : Double.compare(db, da);
         });
 
         Vector up = new Vector(0, 1, 0);
@@ -81,29 +88,27 @@ public class Camera {
 
         for (Particle p : particles) {
             Vector rel = p.pos.subtract(pos);
-
-            double depth = rel.dot(normal);
             
             double x = rel.dot(right), y = rel.dot(up), r = p.rad;
 
-            if (!usePerspective){
-                if(r/zoom > Environment.RESOLUTION * Environment.ASPECT_RATIO) continue;
-                x /= zoom;
-                y /= zoom;
-                r /= zoom;
-            }
+            double depth = rel.dot(normal);
 
             if (usePerspective) {
                 if (depth > 0) {
                     x /= (depth);
                     y /= (depth);
-                    r = Math.min(Math.sqrt(r*r - (r*r*r*r)/(depth*depth))/(depth - (r*r)/depth), 100000);
+                    r = Math.min(Math.sqrt(r*r - (r*r*r*r)/(depth*depth))/((depth - (r*r)/depth)), 100000);
                 } else if(depth==0){
                     r = 100000;
                 } else{
                     r = 0;
                 }
                 x *= 100; y *= 100; r *= 100;
+            } else {
+                if(r/zoom > Environment.RESOLUTION * Environment.ASPECT_RATIO) continue;
+                x /= zoom;
+                y /= zoom;
+                r /= zoom;
             }
             
             g.setColor(p.luminosity);
@@ -160,33 +165,6 @@ public class Camera {
         }
     }
 
-    public void drawMiniOrigin(Graphics2D g){ 
-        final Point offset = new Point((int) (Environment.RESOLUTION * Environment.ASPECT_RATIO * 0.4), (int) (Environment.RESOLUTION * 0.4));
-
-        class ColoredPoint{
-            Vector point;
-            Color color;
-            ColoredPoint(Vector v, Color c){
-                this.point = v; this.color = c;
-            }
-        }
-
-        ColoredPoint[] ends = { new ColoredPoint(new Vector(0,0,50), Color.RED), new ColoredPoint(new Vector(0,50,0), Color.BLUE), new ColoredPoint(new Vector(50,0,0), Color.GREEN)};
-
-        Arrays.sort(ends, (a,b) -> Double.compare( b.point.dot(normal), a.point.dot(normal)));
-
-        Vector up = new Vector(0, 1, 0);
-        Vector right = normal.cross(up).normalize();
-        up = right.cross(normal).normalize();
-
-        for (ColoredPoint end : ends) {
-            double px = end.point.dot(right);
-            double py = end.point.dot(up);
-            g.setColor(end.color);
-            g.drawLine(offset.x, offset.y, (int) px + offset.x, (int) py + offset.y);
-        }
-    }
-
     //proj 3d line to 2d surface, clipped
     private Point[] projectLineToScreen(Vector p, Vector q) {
         Vector up = new Vector(0, 1, 0);
@@ -221,14 +199,12 @@ public class Camera {
         double qx = qRel.dot(right);
         double qy = qRel.dot(up);
 
-        if (!usePerspective) {
-            px /= zoom; py /= zoom;
-            qx /= zoom; qy /= zoom;
-        }
-
         if (usePerspective) {
             px /= pDepth / 100; py /= pDepth / 100;
             qx /= qDepth / 100; qy /= qDepth / 100;
+        } else {
+            px /= zoom; py /= zoom;
+            qx /= zoom; qy /= zoom;
         }
 
         return new Point[]{
@@ -236,5 +212,4 @@ public class Camera {
             new Point((int) qx, (int) qy)
         };
     }
-
 }

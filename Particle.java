@@ -15,7 +15,7 @@ public class Particle{
     public String collideType; //none, separate, collide
 
     public Particle(Vector pos, int rad, double mass, String shape, Vector vel, Color luminosity, boolean fixed, String collideType){
-        this.pos = new Vector(pos); this.rad = rad; this.mass = mass; this.shape = shape; this.vel = new Vector(vel).scale(Environment.TICK_SPEED); this.luminosity = luminosity; this.fixed = fixed; this.collideType = collideType;
+        this.pos = new Vector(pos); this.rad = rad; this.mass = mass; this.shape = shape; this.vel = new Vector(vel); this.luminosity = luminosity; this.fixed = fixed; this.collideType = collideType;
 
         this.accel = new Vector(0,0,0);
     }
@@ -24,7 +24,7 @@ public class Particle{
         
     // }
 
-    public void collide(Particle other){
+    public void collide(Particle other, Constants c){
         if(this == other) return;
 
         if(this.fixed && other.fixed) return;
@@ -107,7 +107,7 @@ public class Particle{
 
     }
 
-    public void gravitate(Particle other){
+    public void gravitate(Particle other, Constants c){
         if(this == other) return;
 
         Vector displacement = this.pos.subtract(other.pos);
@@ -116,7 +116,7 @@ public class Particle{
 
         double distSquared = (dist + overlap/2) * (dist + overlap/2);
 
-        Vector gravity = displacement.normalize().scale((Constants.GRAV_CONST * this.mass * other.mass) / distSquared);
+        Vector gravity = displacement.normalize().scale((c.GRAV_CONST * this.mass * other.mass) / distSquared);
         if(!this.fixed) this.accel = this.accel.subtract(gravity.scale(1/this.mass));
         if(!other.fixed) other.accel = other.accel.add(gravity.scale(1/other.mass));
     }
