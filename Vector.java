@@ -60,4 +60,16 @@ public class Vector {
 
         return term1.add(term2).add(term3);
     }
+
+    @Override
+    public String toString(){
+        return "<"+x+","+y+","+z+">";
+    }
+
+    @Override
+    public boolean equals(Object o){
+        if(!(o instanceof Vector)) return false;
+        Vector other = (Vector) o;
+        return this.x==other.x && this.y==other.y && this.z==other.z;
+    }
 }

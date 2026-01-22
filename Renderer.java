@@ -8,9 +8,7 @@ public class Renderer extends JPanel {
     private final Simulator simulator;
 
     public Renderer(Camera camera, Simulator simulator) {
-        this.camera = camera;
-        this.display = new Display(camera);
-        this.simulator = simulator;
+        this(camera, simulator, new Display(camera));
     }
 
     public Renderer(Camera camera, Simulator simulator, Display display) {
@@ -47,7 +45,7 @@ public class Renderer extends JPanel {
         g2d.translate(getWidth() / 2, getHeight() / 2);
         g2d.scale(1, -1);
 
-        g2d.scale(camera.scale, camera.scale);
+        // g2d.scale(camera.scale, camera.scale);
 
         if (Environment.ANTIALIASING_ENABLED) g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
@@ -58,7 +56,7 @@ public class Renderer extends JPanel {
         ArrayList<Particle> particles = simulator.getParticles();
         camera.render(particles, g2d);
 
-        g2d.scale(1/camera.scale, 1/camera.scale);
+        // g2d.scale(1/camera.scale, 1/camera.scale);
         
         display.drawZoomIndicator(g2d);
         display.drawMiniOrigin(g2d);

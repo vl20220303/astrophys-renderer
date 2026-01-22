@@ -5,7 +5,7 @@ public class Constants {
     public double GRAV_CONST;
     public double LIGHT_SPEED;
 
-    private double UNITS_SCALE, UNITS_WEIGHT, UNITS_TIME = 1;
+    private double UNITS_SCALE = 1, UNITS_WEIGHT = 1, UNITS_TIME = 1;
 
     /**
      * To scale all constants according to the specified units, for use by the simulator.

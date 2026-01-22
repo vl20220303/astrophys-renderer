@@ -1,19 +1,16 @@
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.awt.GradientPaint;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Point;
 
 public class Camera {
-    public static final double ZOOM_PER_TICK = 0.5;
-    public static final double SHIFT_PER_TICK = 1;
-    public static final double ROTATE_PER_TICK = 0.001;
 
     public Vector normal, pos;
-    public boolean usePerspective;
+    private boolean usePerspective;
     public double zoom;
     public double scale = 1;
-    public double rotation;
 
     public Camera(Vector pos, Vector normal, boolean usePerspective){
         this.pos = pos; this.normal = normal.normalize(); this.usePerspective = usePerspective;
@@ -25,8 +22,9 @@ public class Camera {
     }
 
     public void zoom(double ox, double oy, double ticks) { // zoom in/out by given mouse-ticks
-        ticks*=ZOOM_PER_TICK;
-        ox*=SHIFT_PER_TICK * 0.01; oy*=SHIFT_PER_TICK * 0.01;
+        if(usePerspective){
+            ox/=100; oy/=100;
+        }
 
         Vector up = new Vector(0, 1, 0);
         Vector right = normal.cross(up).normalize();
@@ -40,12 +38,10 @@ public class Camera {
     }
 
     public void scale(double ticks) { // scale the image by given mouse-ticks
-        ticks*=ZOOM_PER_TICK;
         scale = Math.max(scale+ticks, 0.00000001);
     }
 
     public void shift(double dx, double dy) { // pan by given x,y on-screen/relative to screen
-        dx*=SHIFT_PER_TICK; dy*=SHIFT_PER_TICK;
         dx*=zoom; dy*=zoom;
         if(usePerspective){
             dx/=100; dy/=100;
@@ -61,7 +57,7 @@ public class Camera {
     }
 
     public void orbit(double ox, double oy, double dx, double dy) { // rotate by given x,y on-screen/relative to screen
-        dx*=ROTATE_PER_TICK; dy*=ROTATE_PER_TICK; ox*=zoom; oy*=zoom;
+        ox*=zoom; oy*=zoom;
         Vector up = new Vector(0, 1, 0);
         Vector right = normal.cross(up).normalize();
         
@@ -113,7 +109,7 @@ public class Camera {
             
             g.setColor(p.luminosity);
             if(p.shape.equals("circle")){
-                g.fillOval((int) (x-r), (int) (y-r), (int) (2*r), (int) (2*r));
+                g.fillOval((int) ((x-r)*scale), (int) ((y-r)*scale), (int) ((2*r)*scale), (int) ((2*r)*scale));
             }
         }
     }
@@ -127,13 +123,13 @@ public class Camera {
             Point[] line = projectLineToScreen(new Vector(x, gridMin, 0), new Vector(x, gridMax, 0));
             if(line == null) continue;
             g.setColor(Color.ORANGE);
-            g.drawLine(line[0].x, line[0].y, line[1].x, line[1].y);
+            g.drawLine((int) (line[0].x*scale), (int) (line[0].y*scale), (int) (line[1].x*scale), (int) (line[1].y*scale));
         }
         for (double y = gridMin + step; y <= gridMax - step; y += step) {
             Point[] line = projectLineToScreen(new Vector(gridMin, y, 0), new Vector(gridMax, y, 0));
             if(line == null) continue;
             g.setColor(Color.ORANGE);
-            g.drawLine(line[0].x, line[0].y, line[1].x, line[1].y);
+            g.drawLine((int) (line[0].x*scale), (int) (line[0].y*scale), (int) (line[1].x*scale), (int) (line[1].y*scale));
         }
     }
 
@@ -161,7 +157,7 @@ public class Camera {
             Point[] line = projectLineToScreen(Vector.ORIGIN, l.end);
             if(line == null) continue;
             g.setColor(l.color);
-            g.drawLine(line[0].x, line[0].y, line[1].x, line[1].y);
+            g.drawLine((int) (line[0].x*scale), (int) (line[0].y*scale), (int) (line[1].x*scale), (int) (line[1].y*scale));
         }
     }
 

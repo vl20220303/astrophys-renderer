@@ -1,4 +1,3 @@
-import java.awt.GradientPaint;
 import java.util.ArrayList;
 
 public class Simulator implements Runnable {

@@ -3,11 +3,15 @@ import java.awt.event.*;
 import javax.swing.*;
 
 public class Controls implements MouseListener, MouseMotionListener, MouseWheelListener, KeyListener {
+    private double ZOOM_PER_TICK = 0.5;
+    private double SHIFT_PER_TICK = 1;
+    private double ROTATE_PER_TICK = 0.001;
+
     private final Camera camera;
     private final JPanel panel;
 
     private Point lastMouse;
-    private boolean leftDown, rightDown, controlDown = false;
+    private boolean leftDown, rightDown, controlDown;
 
     public Controls(Camera camera, JPanel panel) {
         this.camera = camera;
@@ -20,6 +24,10 @@ public class Controls implements MouseListener, MouseMotionListener, MouseWheelL
         panel.addKeyListener(this);
         panel.setFocusable(true);
     }
+
+    public void setZoomPerTick(double d){ ZOOM_PER_TICK = d; }
+    public void setShiftPerTick(double d){ SHIFT_PER_TICK = d; }
+    public void setRotatePerTick(double d){ ROTATE_PER_TICK = d; }
 
     // Mouse events for pan (left), rotate (right), zoom (wheel)
     @Override
@@ -40,9 +48,9 @@ public class Controls implements MouseListener, MouseMotionListener, MouseWheelL
         int dx = e.getX() - lastMouse.x;
         int dy = e.getY() - lastMouse.y;
         if (leftDown) {
-            camera.shift(-dx, dy);
+            camera.shift(-dx*SHIFT_PER_TICK/camera.scale*2, dy*SHIFT_PER_TICK/camera.scale*2);
         } else if (rightDown) {
-            camera.orbit(lastMouse.x, lastMouse.y, -dx, dy);
+            camera.orbit(lastMouse.x, lastMouse.y, -dx*ROTATE_PER_TICK, dy*ROTATE_PER_TICK);
         }
         lastMouse = e.getPoint();
         panel.repaint();
@@ -51,9 +59,9 @@ public class Controls implements MouseListener, MouseMotionListener, MouseWheelL
     @Override
     public void mouseWheelMoved(MouseWheelEvent e) {
         if (controlDown) {
-            camera.scale(e.getPreciseWheelRotation());
+            camera.scale(e.getPreciseWheelRotation()*ZOOM_PER_TICK);
         } else {
-            camera.zoom(e.getPoint().getX() - panel.getWidth() / 2, e.getPoint().getY() - panel.getHeight() / 2, -e.getPreciseWheelRotation());
+            camera.zoom((e.getPoint().getX() - panel.getWidth() / 2)*SHIFT_PER_TICK, (e.getPoint().getY() - panel.getHeight() / 2)*SHIFT_PER_TICK, -e.getPreciseWheelRotation()*ZOOM_PER_TICK);
         }
         panel.repaint();
     }

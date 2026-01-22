@@ -20,6 +20,12 @@ public class Particle{
         this.accel = new Vector(0,0,0);
     }
 
+    public Particle(Particle p){
+        this.pos = p.pos; this.rad = p.rad; this.mass = p.mass; this.shape = p.shape; this.vel = p.vel; this.luminosity = p.luminosity; this.fixed = p.fixed; this.collideType = p.collideType;
+        
+        this.accel = p.accel;
+    }
+
     // public ArrayList<Particle> createParticles(Equation[] eqautions, int particleSize, double totalMass, String shape, Equation[] velEquations, double[] luminosity, String collideType){
         
     // }
