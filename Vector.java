@@ -19,19 +19,37 @@ public class Vector {
     public Vector add(Vector other) {
         return new Vector(this.x + other.x, this.y + other.y, this.z + other.z);
     }
+    public Vector addInPlace(Vector other) {
+        this.x+=other.x; this.y+=other.y; this.z+=other.z;
+        return this;
+    }
 
     public Vector subtract(Vector other) {
         return new Vector(this.x - other.x, this.y - other.y, this.z - other.z);
     }
+    public Vector subtractInPlace(Vector other) {
+        this.x-=other.x; this.y-=other.y; this.z-=other.z;
+        return this;
+    }
 
     public Vector scale(double scalar) {
         return new Vector(x * scalar, y * scalar, z * scalar);
+    }
+    public Vector scaleInPlace(double scalar) {
+        this.x*=scalar; this.y*=scalar; this.z*=scalar;
+        return this;
     }
 
     public Vector normalize() {
         double length = this.abs();
         if (length == 0) return new Vector(0, 0, 0);
         return new Vector(x / length, y / length, z / length);
+    }
+    public Vector normalizeInPlace(){
+        double length = this.abs();
+        if (length == 0) return this;
+        this.x/=length; this.y/=length; this.z/=length;
+        return this;
     }
 
     public double abs(){

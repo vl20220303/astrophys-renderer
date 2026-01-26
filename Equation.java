@@ -8,6 +8,8 @@ public abstract class Equation {
     protected double total;
     protected double resolution;
 
+    protected double[] etc = new double[]{0, 2*Math.PI}, andthen = new double[]{0, 0};
+
     public Equation(Vector center, double ir, double or, Function<Double, Double> densityFunction){
         this.center = center; this.ir = ir; this.or = or;
         this.densityFunction = densityFunction;

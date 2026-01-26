@@ -52,13 +52,13 @@ public class Main {
 
         Simulator simulator = new Simulator(particles, constants);
 
-        Camera camera = new Camera(new Vector(0, 0, 1000), true);
+        Camera camera = new Projector(new Vector(0, 0, 1000), true);
         Renderer renderer = new Renderer(camera, simulator);
         JFrame frame = new JFrame("Astrophys Renderer");
         renderer.init(frame);
         renderer.run();
 
-        Camera camera2 = new Camera(new Vector(0, 0, 500), new Vector(0, 0, -1), false);
+        Camera camera2 = new Projector(new Vector(0, 0, 500), new Vector(0, 0, -1), false);
         Renderer renderer2 = new Renderer(camera2, simulator);
         JFrame frame2 = new JFrame("Astrophys Renderer - Alternate Angle");
         renderer2.init(frame2);
