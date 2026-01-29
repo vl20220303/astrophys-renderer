@@ -1,10 +1,15 @@
+package utils.generator;
 import java.util.ArrayList;
 import java.util.function.Function;
 
-public class Sphere extends Equation {
-    
-    public Sphere(Vector center, double ir, double or, Function<Double, Double> densityFunction){
+import utils.utils.Particle;
+import utils.utils.Vector;
+
+public class Ray extends Generator{
+    private Vector line;
+    public Ray(Vector center, Vector normal, double ir, double or, Function<Double, Double> densityFunction, Boolean twoTailed){
         super(center, ir, or, densityFunction);
+        this.line = normal;
     }
 
     @Override
@@ -13,14 +18,13 @@ public class Sphere extends Equation {
         ArrayList<Particle> out = new ArrayList<Particle>();
         for(double r = ir; r<=or; r+=resolution){
             for(int i = 0; i<Math.round(densityFunction.apply(r)/total*num); i++){
-                double phi = Math.random()*Math.PI;
-                double theta = Math.random()*2*Math.PI;
-                Vector diff = new Vector(Math.cos(phi), Math.sin(phi)*Math.cos(theta), Math.sin(phi)*Math.sin(theta)).scale(r);
+                double nr = (r+resolution*Math.random()) * (Math.signum(Math.random()-0.5));
+                Vector diff = line.normalize().scale(nr);
 
                 Vector vel = new Vector(0,0,0);
                 if(centerVel!=null){ vel = vel.add(centerVel); }
                 if(getRotationalVel!=null){ 
-                    Double rotationalVel = getRotationalVel.apply(r);
+                    Double rotationalVel = getRotationalVel.apply(nr);
                     Vector rotationalVec = rotationAxis.cross(diff).normalize().scale(rotationalVel);
                     vel = vel.add(rotationalVec);
                 }
@@ -32,5 +36,8 @@ public class Sphere extends Equation {
             }
         }
         return out;
+    }
+    public ArrayList<Particle> generate(int num, Particle template, Vector centerVel, Function<Double, Double> getRotationalVel){
+        return generate(num, template, centerVel, this.line, getRotationalVel);
     }
 }

@@ -1,6 +1,9 @@
+package utils.userinterface;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
+
+import utils.camera.Camera;
 
 public class Controls implements MouseListener, MouseMotionListener, MouseWheelListener, KeyListener {
     private double ZOOM_PER_TICK = 0.5;

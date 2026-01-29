@@ -1,29 +1,28 @@
+package utils.userinterface;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.util.Arrays;
 
+import utils.camera.Camera;
+import utils.settings.Settings;
+import utils.utils.Vector;
+
 public class Display{
     
     Camera camera;
-
-    private boolean DRAW_MINI_ORIGIN = true;    //draws origin axes reference in top right
-    private boolean DRAW_ZOOM_INDICATOR = true; //draws zoom indicator in top right
+    Settings environment;
 
     public Display(Camera c){
         this.camera = c;
     }
 
-    public void enableMiniOrigin(){ DRAW_MINI_ORIGIN = true; }
-    public void disableMiniOrigin(){ DRAW_MINI_ORIGIN = false; }
-
-    public void enableZoomIndicator(){ DRAW_ZOOM_INDICATOR = true; }
-    public void disableZoomIndicator(){ DRAW_ZOOM_INDICATOR = false; }
+    public void setEnvironment(Settings environment){ this.environment = environment; }
 
     public void drawMiniOrigin(Graphics2D g){
-        if(!DRAW_MINI_ORIGIN) return;
+        if(!environment.DRAW_MINI_ORIGIN) return;
 
-        final Point offset = new Point((int) (Environment.RESOLUTION * Environment.ASPECT_RATIO * 0.4), (int) (Environment.RESOLUTION * 0.4));
+        final Point offset = new Point((int) (environment.RESOLUTION * environment.ASPECT_RATIO * 0.4), (int) (environment.RESOLUTION * 0.4));
 
         class ColoredPoint{
             Vector point;
@@ -50,9 +49,9 @@ public class Display{
     }
 
     public void drawZoomIndicator(Graphics2D g){
-        if(!DRAW_ZOOM_INDICATOR) return;
+        if(!environment.DRAW_ZOOM_INDICATOR) return;
 
-        final Point offset = new Point((int) (Environment.RESOLUTION * Environment.ASPECT_RATIO * 0.4), (int) (Environment.RESOLUTION * 0.35));
+        final Point offset = new Point((int) (environment.RESOLUTION * environment.ASPECT_RATIO * 0.4), (int) (environment.RESOLUTION * 0.35));
 
         final int scaleRadius = (int) (5*(camera.scale>1 ? Math.log(Math.E - 1 + camera.scale) : camera.scale));
 

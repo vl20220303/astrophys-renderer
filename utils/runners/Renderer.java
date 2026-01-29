@@ -1,4 +1,12 @@
+package utils.runners;
 import javax.swing.*;
+
+import utils.camera.Camera;
+import utils.settings.Settings;
+import utils.utils.Particle;
+import utils.userinterface.Display;
+import utils.userinterface.Controls;
+
 import java.awt.*;
 import java.util.ArrayList;
 
@@ -6,20 +14,26 @@ public class Renderer extends JPanel {
     private final Camera camera;
     private final Display display;
     private final Simulator simulator;
+    private final Settings environment;
 
-    public Renderer(Camera camera, Simulator simulator) {
-        this(camera, simulator, new Display(camera));
+    public Renderer(Camera camera, Simulator simulator, Settings environment) {
+        this(camera, simulator, new Display(camera), environment);
     }
 
-    public Renderer(Camera camera, Simulator simulator, Display display) {
+    public Renderer(Camera camera, Simulator simulator, Display display, Settings environment) {
         this.camera = camera;
         this.display = display;
         this.simulator = simulator;
+        this.environment = environment;
     }
 
     public void init(JFrame frame){
-        setPreferredSize(new Dimension((int) (Environment.RESOLUTION * Environment.ASPECT_RATIO), Environment.RESOLUTION));
-        setBackground(Environment.BACKGROUND_COLOR);
+        setPreferredSize(new Dimension((int) (environment.RESOLUTION * environment.ASPECT_RATIO), environment.RESOLUTION));
+        setBackground(environment.BACKGROUND_COLOR);
+
+        simulator.setEnvironment(environment);
+        camera.setEnvironment(environment);
+        display.setEnvironment(environment);
 
         new Controls(camera, this);
 
@@ -34,7 +48,7 @@ public class Renderer extends JPanel {
         Thread simulatorThread = new Thread(simulator);
         simulatorThread.start();
 
-        Timer timer = new Timer(Environment.TICK_SPEED, e -> repaint());
+        Timer timer = new Timer(environment.TICK_SPEED, e -> repaint());
         timer.start();
     }
 
@@ -47,11 +61,11 @@ public class Renderer extends JPanel {
 
         // g2d.scale(camera.scale, camera.scale);
 
-        if (Environment.ANTIALIASING_ENABLED) g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        if (environment.ANTIALIASING_ENABLED) g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        if (Environment.DRAW_ORIGIN_GRID) camera.drawGrid(g2d);
+        if (environment.DRAW_ORIGIN_GRID) camera.drawGrid(g2d);
 
-        if (Environment.DRAW_ORIGIN) camera.drawOrigin(g2d);
+        if (environment.DRAW_ORIGIN) camera.drawOrigin(g2d);
 
         ArrayList<Particle> particles = simulator.getParticles();
         camera.render(particles, g2d);

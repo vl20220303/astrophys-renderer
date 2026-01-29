@@ -1,11 +1,15 @@
+package utils.generator;
 import java.util.ArrayList;
 import java.util.function.Function;
 
-public class Ray extends Equation{
-    private Vector line;
-    public Ray(Vector center, Vector normal, double ir, double or, Function<Double, Double> densityFunction, Boolean twoTailed){
+import utils.utils.Particle;
+import utils.utils.Vector;
+
+public class Disk extends Generator {
+    private Vector normal;
+    public Disk(Vector center, Vector normal, double ir, double or, Function<Double, Double> densityFunction){
         super(center, ir, or, densityFunction);
-        this.line = normal;
+        this.normal = normal;
     }
 
     @Override
@@ -14,13 +18,13 @@ public class Ray extends Equation{
         ArrayList<Particle> out = new ArrayList<Particle>();
         for(double r = ir; r<=or; r+=resolution){
             for(int i = 0; i<Math.round(densityFunction.apply(r)/total*num); i++){
-                double nr = (r+resolution*Math.random()) * (Math.signum(Math.random()-0.5));
-                Vector diff = line.normalize().scale(nr);
+                double theta = Math.random()*2*Math.PI;
+                Vector diff = (Vector.X_AXIS.equals(normal) ? Vector.Y_AXIS : Vector.X_AXIS).cross(normal).rotateAroundAxis(normal, theta).scale(r);
 
                 Vector vel = new Vector(0,0,0);
                 if(centerVel!=null){ vel = vel.add(centerVel); }
                 if(getRotationalVel!=null){ 
-                    Double rotationalVel = getRotationalVel.apply(nr);
+                    Double rotationalVel = getRotationalVel.apply(r);
                     Vector rotationalVec = rotationAxis.cross(diff).normalize().scale(rotationalVel);
                     vel = vel.add(rotationalVec);
                 }
@@ -34,6 +38,6 @@ public class Ray extends Equation{
         return out;
     }
     public ArrayList<Particle> generate(int num, Particle template, Vector centerVel, Function<Double, Double> getRotationalVel){
-        return generate(num, template, centerVel, this.line, getRotationalVel);
+        return generate(num, template, centerVel, this.normal, getRotationalVel);
     }
 }

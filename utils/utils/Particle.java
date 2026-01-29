@@ -1,5 +1,8 @@
+package utils.utils;
 import java.awt.Color;
 import java.util.ArrayList;
+
+import utils.settings.Constants;
 
 public class Particle{
     public Vector pos;
@@ -25,10 +28,6 @@ public class Particle{
         
         this.accel = p.accel;
     }
-
-    // public ArrayList<Particle> createParticles(Equation[] eqautions, int particleSize, double totalMass, String shape, Equation[] velEquations, double[] luminosity, String collideType){
-        
-    // }
 
     public void collide(Particle other, Constants c){
         if(this == other) return;

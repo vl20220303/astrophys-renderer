@@ -1,10 +1,16 @@
+package utils.runners;
 import java.util.ArrayList;
+
+import utils.settings.Constants;
+import utils.settings.Settings;
+import utils.utils.Particle;
 
 public class Simulator implements Runnable {
     private final ArrayList<Particle> particles;
     private final Constants constants;
     private final Object lock = new Object();
     private boolean running = true;
+    private Settings environment;
 
     private boolean GRAVITY_ENABLED = true;
 
@@ -12,6 +18,8 @@ public class Simulator implements Runnable {
         this.particles = particles;
         this.constants = constants;
     }
+
+    public void setEnvironment(Settings environment){ this.environment = environment; }
 
     public void stop() {
         running = false;
@@ -33,7 +41,7 @@ public class Simulator implements Runnable {
                 updateParticles();
             }
             try {
-                Thread.sleep(Environment.TICK_SPEED); // Control simulation speed
+                Thread.sleep(environment.TICK_SPEED); // Control simulation speed
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;

@@ -1,3 +1,4 @@
+package utils.utils;
 public class Vector {
     public static final Vector ORIGIN = new Vector(0,0,0);
     public static final Vector X_AXIS = new Vector(1, 0, 0);

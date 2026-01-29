@@ -1,3 +1,4 @@
+package utils.settings;
 public class Constants {
     private final double ACTUAL_GRAV_CONST = 6.67430e-11;;
     private final double ACTUAL_LIGHT_SPEED = 2.99792e8;
@@ -17,7 +18,7 @@ public class Constants {
         LIGHT_SPEED = ACTUAL_LIGHT_SPEED * Math.pow(UNITS_SCALE, -1) * Math.pow(UNITS_TIME, 1);
     }
 
-    public void setScale(double s){ UNITS_SCALE = s; }
-    public void setWeight(double w){ UNITS_WEIGHT = w; }
-    public void setTime(double t){ UNITS_TIME = t; }
+    public Constants setScale(double s){ UNITS_SCALE = s; return this; }
+    public Constants setWeight(double w){ UNITS_WEIGHT = w; return this; }
+    public Constants setTime(double t){ UNITS_TIME = t; return this; }
 }

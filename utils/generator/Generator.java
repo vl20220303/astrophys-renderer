@@ -1,7 +1,11 @@
+package utils.generator;
 import java.util.ArrayList;
 import java.util.function.Function;
 
-public abstract class Equation {
+import utils.utils.Particle;
+import utils.utils.Vector;
+
+public abstract class Generator {
     protected Vector center;
     protected double ir, or;
     protected Function<Double, Double> densityFunction;
@@ -10,12 +14,12 @@ public abstract class Equation {
 
     protected double[] etc = new double[]{0, 2*Math.PI}, andthen = new double[]{0, 0};
 
-    public Equation(Vector center, double ir, double or, Function<Double, Double> densityFunction){
+    public Generator(Vector center, double ir, double or, Function<Double, Double> densityFunction){
         this.center = center; this.ir = ir; this.or = or;
         this.densityFunction = densityFunction;
     }
 
-    public Equation(int dims, Vector center, double ir, double or){
+    public Generator(int dims, Vector center, double ir, double or){
         this(center, ir, or, (Double r) -> 1d);
     }
 

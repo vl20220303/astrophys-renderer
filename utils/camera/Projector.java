@@ -1,5 +1,9 @@
+package utils.camera;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
+
+import utils.utils.Particle;
+import utils.utils.Vector;
 
 public class Projector extends Camera{
     public Projector(Vector pos, Vector normal, boolean usePerspective){
@@ -11,7 +15,6 @@ public class Projector extends Camera{
     }
 
     public void render(ArrayList<Particle> particles, Graphics2D g){
-
         particles.sort((a, b) -> {
             double da = a.pos.subtract(pos).dot(normal);
             double db = b.pos.subtract(pos).dot(normal);
@@ -41,7 +44,7 @@ public class Projector extends Camera{
                 }
                 x *= 100; y *= 100; r *= 100;
             } else {
-                if(r/zoom > Environment.RESOLUTION * Environment.ASPECT_RATIO) continue;
+                if(r/zoom > environment.RESOLUTION * environment.ASPECT_RATIO) continue;
                 x /= zoom;
                 y /= zoom;
                 r /= zoom;
