@@ -47,17 +47,17 @@ public class Main {
         Generator eq = new Sphere(new Vector(0, 0, 0), 500, 2000, (Double r) -> Math.pow((r-499)/1500, 0));
         eq.setResolution(1);
         eq.setup();
-        ArrayList<Particle> cloud = eq.generate(1500, new Particle(Vector.ORIGIN, 20, 2e12, "circle", new Vector(0,0,0), Color.GREEN, false, "none"),null,Vector.Z_AXIS.add(Vector.Y_AXIS), (Double d) -> 8*Math.pow(d, -0.5));
+        ArrayList<Particle> cloud = eq.generate(1500, new Particle(Vector.ORIGIN, 20, 2e12, "circle", new Vector(0,0,0), Color.GREEN, true, "none"),null,Vector.Z_AXIS.add(Vector.Y_AXIS), (Double d) -> 8*Math.pow(d, -0.5));
 
         Generator eq2 = new Disk(new Vector(0,0,0), Vector.Y_AXIS, 500, 2000, (Double r) -> Math.pow((r-499)/1500, 0));
         eq2.setResolution(1);
         eq2.setup();
-        ArrayList<Particle> cloud2 = eq2.generate(1500, new Particle(Vector.ORIGIN, 20, 2e12, "circle", new Vector(0,0,0), Color.ORANGE, false, "none"),null,Vector.Z_AXIS.add(Vector.Y_AXIS), (Double d) -> 8*Math.pow(d, -0.5));
+        ArrayList<Particle> cloud2 = eq2.generate(1500, new Particle(Vector.ORIGIN, 20, 2e12, "circle", new Vector(0,0,0), Color.ORANGE, true, "none"),null,Vector.Z_AXIS.add(Vector.Y_AXIS), (Double d) -> 8*Math.pow(d, -0.5));
 
         Generator eq3 = new Ray(new Vector(0,0,0), Vector.X_AXIS, 500, 2000, (Double r) -> Math.pow((r-499)/1500, 0), true);
         eq3.setResolution(1);
         eq3.setup();
-        ArrayList<Particle> cloud3 = eq3.generate(1500, new Particle(Vector.ORIGIN, 20, 2e12, "circle", new Vector(0,0,0), Color.BLUE, false, "none"),null,Vector.Z_AXIS.add(Vector.Y_AXIS), (Double d) -> 8*Math.pow(d, -0.5));
+        ArrayList<Particle> cloud3 = eq3.generate(1500, new Particle(Vector.ORIGIN, 20, 2e12, "circle", new Vector(0,0,0), Color.BLUE, true, "none"),null,Vector.Z_AXIS.add(Vector.Y_AXIS), (Double d) -> 8*Math.pow(d, -0.5));
         
         particles.addAll(cloud);
         particles.addAll(cloud2);

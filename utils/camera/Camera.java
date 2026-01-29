@@ -25,7 +25,7 @@ public abstract class Camera {
     }
 
     public Camera(Vector pos, boolean usePerspective){
-        this(pos, (usePerspective ? pos.scale(-1).normalize() : pos.scale(-1)), usePerspective);
+        this(pos, (usePerspective ? pos.scale(-1) : pos.scale(-1).normalize()), usePerspective);
     }
 
     public void setEnvironment(Settings environment){ this.environment = environment; }
