@@ -13,18 +13,18 @@ public class Particle{
     public Vector vel;
     public Vector accel;
 
-    public Color luminosity; 
+    public Color color; 
     public boolean fixed;
     public String collideType; //none, separate, collide
 
     public Particle(Vector pos, int rad, double mass, String shape, Vector vel, Color luminosity, boolean fixed, String collideType){
-        this.pos = new Vector(pos); this.rad = rad; this.mass = mass; this.shape = shape; this.vel = new Vector(vel); this.luminosity = luminosity; this.fixed = fixed; this.collideType = collideType;
+        this.pos = new Vector(pos); this.rad = rad; this.mass = mass; this.shape = shape; this.vel = new Vector(vel); this.color = luminosity; this.fixed = fixed; this.collideType = collideType;
 
         this.accel = new Vector(0,0,0);
     }
 
     public Particle(Particle p){
-        this.pos = p.pos; this.rad = p.rad; this.mass = p.mass; this.shape = p.shape; this.vel = p.vel; this.luminosity = p.luminosity; this.fixed = p.fixed; this.collideType = p.collideType;
+        this.pos = p.pos; this.rad = p.rad; this.mass = p.mass; this.shape = p.shape; this.vel = p.vel; this.color = p.color; this.fixed = p.fixed; this.collideType = p.collideType;
         
         this.accel = p.accel;
     }

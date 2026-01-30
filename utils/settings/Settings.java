@@ -3,6 +3,7 @@ import java.awt.Color;
 
 public class Settings {
     public final int TICK_SPEED;
+    public final int FRAME_TIME;
 
     // SCREEN
     public final int RESOLUTION;                //px height
@@ -16,8 +17,9 @@ public class Settings {
     public final boolean DRAW_MINI_ORIGIN;      //draws origin axes reference in top right
     public final boolean DRAW_ZOOM_INDICATOR;   //draws zoom indicator in top right
 
-    public Settings(int tick_speed, int resolution, double aspect_ratio, boolean antialiasing_on, Color background_color, boolean draw_origin, boolean draw_origin_grid, boolean draw_mini_origin, boolean draw_zoom_indicator){
+    public Settings(int tick_speed, int frame_time, int resolution, double aspect_ratio, boolean antialiasing_on, Color background_color, boolean draw_origin, boolean draw_origin_grid, boolean draw_mini_origin, boolean draw_zoom_indicator){
         this.TICK_SPEED = tick_speed;
+        this.FRAME_TIME = frame_time;
         this.RESOLUTION = resolution;
         this.ASPECT_RATIO = aspect_ratio;
         this.ANTIALIASING_ENABLED = antialiasing_on;
@@ -29,7 +31,8 @@ public class Settings {
     }
 
     public static class Builder{
-        private int tick_speed = 16; //60FPS default
+        private int tick_speed = 8;
+        private int frame_time = 16; //60FPS default
         
         private int resolution = 720;
         private double aspect_ratio = 1.778;
@@ -42,14 +45,21 @@ public class Settings {
         private boolean draw_zoom_indicator = false;
 
         public Settings build(){
-            return new Settings(tick_speed, resolution, aspect_ratio, antialiasing_on, background_color, draw_origin, draw_origin_grid, draw_mini_origin, draw_zoom_indicator);
+            return new Settings(tick_speed, frame_time, resolution, aspect_ratio, antialiasing_on, background_color, draw_origin, draw_origin_grid, draw_mini_origin, draw_zoom_indicator);
         }
 
         /** Set tick speed (milliseconds). */
         public Builder setTickSpeed(int i){ tick_speed = i; return this; }
-        public Builder use60FPS(){ this.setTickSpeed(16); return this; }
-        public Builder use30FPS(){ this.setTickSpeed(33); return this; }
-        public Builder use10FPS(){ this.setTickSpeed(100); return this; }
+
+        /** Set frame time (milliseconds) */
+        public Builder setFrameTime(int i){ frame_time = i; return this; }
+        public Builder use60FPS(){ this.setFrameTime(16); return this; }
+        public Builder use30FPS(){ this.setFrameTime(33); return this; }
+        public Builder use24FPS(){ this.setFrameTime(42); return this; }
+        public Builder use12FPS(){ this.setFrameTime(83); return this; }
+
+         /** Set tick and frame speed (milliseconds). */
+        public Builder setSpeed(int i){ setTickSpeed(i); setFrameTime(i); return this; }
 
         /** Set window height (pixels). 
          * @return */

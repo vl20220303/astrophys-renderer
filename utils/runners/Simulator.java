@@ -8,18 +8,17 @@ import utils.utils.Particle;
 public class Simulator implements Runnable {
     private final ArrayList<Particle> particles;
     private final Constants constants;
+    private final Settings environment;
     private final Object lock = new Object();
     private boolean running = true;
-    private Settings environment;
 
     private boolean GRAVITY_ENABLED = true;
 
-    public Simulator(ArrayList<Particle> particles, Constants constants) {
+    public Simulator(ArrayList<Particle> particles, Constants constants, Settings environment) {
         this.particles = particles;
         this.constants = constants;
+        this.environment = environment;
     }
-
-    public void setEnvironment(Settings environment){ this.environment = environment; }
 
     public void stop() {
         running = false;
@@ -36,16 +35,27 @@ public class Simulator implements Runnable {
 
     @Override
     public void run() {
+        long then = System.nanoTime();
+        long now = System.nanoTime();
         while (running) {
+            long cycleStart = System.nanoTime();
+
+            then = System.nanoTime();
             synchronized (lock) {
                 updateParticles();
             }
+            now = System.nanoTime();
+            int elapsed = (int) ((now-then) / 1e6);
+            int step = Math.max(environment.TICK_SPEED - elapsed, 0);
             try {
-                Thread.sleep(environment.TICK_SPEED); // Control simulation speed
+                Thread.sleep(step); // Control simulation speed
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
             }
+
+            int cycle = (int) ((System.nanoTime() - cycleStart) / 1e6);
+            System.out.printf("%s SIMULATOR | update: %d, wait: %d, cycle: %d %s \n", "\u001B[31m", elapsed, step, cycle, "\u001B[0m");
         }
     }
 

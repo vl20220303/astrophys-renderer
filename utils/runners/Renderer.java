@@ -15,6 +15,9 @@ public class Renderer extends JPanel {
     private final Display display;
     private final Simulator simulator;
     private final Settings environment;
+    private boolean running = true;
+
+    private volatile boolean paintFlag = false;
 
     public Renderer(Camera camera, Simulator simulator, Settings environment) {
         this(camera, simulator, new Display(camera), environment);
@@ -31,7 +34,6 @@ public class Renderer extends JPanel {
         setPreferredSize(new Dimension((int) (environment.RESOLUTION * environment.ASPECT_RATIO), environment.RESOLUTION));
         setBackground(environment.BACKGROUND_COLOR);
 
-        simulator.setEnvironment(environment);
         camera.setEnvironment(environment);
         display.setEnvironment(environment);
 
@@ -44,16 +46,19 @@ public class Renderer extends JPanel {
         frame.setVisible(true);
     }
 
-    public void run(){
-        Thread simulatorThread = new Thread(simulator);
-        simulatorThread.start();
+    public void stop(){
+        running = false;
+    }
 
-        Timer timer = new Timer(environment.TICK_SPEED, e -> repaint());
+    public void run(){
+        Timer timer = new Timer(environment.FRAME_TIME, e -> repaint());
         timer.start();
     }
 
     @Override
     protected void paintComponent(Graphics g) {
+        long then = System.nanoTime();
+
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g.create();
         g2d.translate(getWidth() / 2, getHeight() / 2);
@@ -76,5 +81,9 @@ public class Renderer extends JPanel {
         display.drawMiniOrigin(g2d);
 
         g2d.dispose();
+
+        long now = System.nanoTime();
+        int elapsed = (int) ((now-then) / 1e6);
+        System.out.printf("%s RENDERER  | paint: %d \n", "\u001B[0m", elapsed, "\u001B[0m");
     }
 }
