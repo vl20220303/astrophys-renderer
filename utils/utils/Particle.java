@@ -1,32 +1,88 @@
 package utils.utils;
 import java.awt.Color;
+import java.nio.file.NotLinkException;
 import java.util.ArrayList;
 
 import utils.settings.Constants;
 
 public class Particle{
-    public Vector pos;
-    public int rad;
-    public double mass;
-    public String shape;
+    
+    public Vector pos   = new Vector(Vector.ORIGIN);
+    public Vector vel   = new Vector(Vector.ORIGIN);
+    public Vector accel = new Vector(Vector.ORIGIN);
 
-    public Vector vel;
-    public Vector accel;
+    public double rad  = 0;
+    public double mass = 0;
+    public Shape shape = Shape.SPHERE;
+    public enum Shape{
+        SPHERE,
+        IMAGE;
+    }
 
-    public Color color; 
-    public boolean fixed;
-    public String collideType; //none, separate, collide
+    public Color color = Color.BLACK;
+    public double luminosity = 0;
 
-    public Particle(Vector pos, int rad, double mass, String shape, Vector vel, Color luminosity, boolean fixed, String collideType){
+    public boolean fixed = false;
+
+    public enum Behavior{
+        NONE(0),
+        SEPARATE(1),
+        COLLIDE(2);
+
+        private final int val;
+        private Behavior(int i){
+            val = i;
+        }
+    }
+    public Behavior collideType = Behavior.NONE;
+
+    public Particle(){}
+
+    public Particle(Vector pos, int rad, double mass, Shape shape, Vector vel, Color luminosity, boolean fixed, Behavior collideType){
         this.pos = new Vector(pos); this.rad = rad; this.mass = mass; this.shape = shape; this.vel = new Vector(vel); this.color = luminosity; this.fixed = fixed; this.collideType = collideType;
 
         this.accel = new Vector(0,0,0);
     }
 
     public Particle(Particle p){
-        this.pos = p.pos; this.rad = p.rad; this.mass = p.mass; this.shape = p.shape; this.vel = p.vel; this.color = p.color; this.fixed = p.fixed; this.collideType = p.collideType;
-        
+        this.pos = p.pos; 
+        this.vel = p.vel; 
         this.accel = p.accel;
+
+        this.rad = p.rad; 
+        this.mass = p.mass; 
+        this.shape = p.shape; 
+
+        this.color = p.color;
+        this.luminosity = p.luminosity;
+
+        this.fixed = p.fixed; 
+        this.collideType = p.collideType;
+    }
+
+    //* Set Position */
+    public Particle setPos(Vector pos){ this.pos = new Vector(pos); return this; }
+    //* Set Velocity */
+    public Particle setVel(Vector vel){ this.vel = new Vector(vel); return this; }
+    //* Set Radius, Mass, & Shape */
+    public Particle setAttributes(double rad, double mass, Shape shape){
+        this.rad = rad;
+        this.mass = mass;
+        this.shape = shape;
+        return this;
+    }
+    //* Set Color & Luminosity */
+    public Particle setColor(Color color, double luminosity){
+        this.color = color;
+        this.luminosity = luminosity;
+        return this;
+    }
+    //* Fix particle in place */
+    public Particle fixed(){ this.fixed = true; return this; }
+    //* Set Collision Behavior */
+    public Particle setBehavior(Behavior b){
+        this.collideType = b;
+        return this;
     }
 
     public void collide(Particle other, Constants c){
@@ -34,16 +90,8 @@ public class Particle{
 
         if(this.fixed && other.fixed) return;
 
-        int aggrType;
-        if(this.collideType.equals("none") && other.collideType.equals("none")){
-            aggrType = 0; //none
-        } else if(this.collideType.equals("separate") || other.collideType.equals("separate")){
-            aggrType = 1; //separate
-        } else{
-            aggrType = 2; //collide, default
-        }
-
-        if(aggrType == 0) return;
+        int collideType = Math.min(this.collideType.val * other.collideType.val, 2);
+        if(collideType == 0) return;
 
         Vector displacement = this.pos.subtract(other.pos);
         double dist = displacement.abs();
@@ -61,7 +109,7 @@ public class Particle{
 
         if(overlap > 0){ //resolve overlap
 
-            overlap+=0.1;
+            overlap+=1e-4;
 
             Vector normalVector = displacement.normalize().scale(overlap);
 
@@ -71,16 +119,18 @@ public class Particle{
                 Vector thisSep = normalVector.scale(thisScaleFactor);
                 Vector otherSep = normalVector.scale(1 - thisScaleFactor);
 
-                this.pos = this.pos.add(thisSep);
-                other.pos = other.pos.subtract(otherSep);
+                this.pos.addInPlace(thisSep);
+                other.pos.subtractInPlace(otherSep);
+            } else if(!this.fixed){ 
+                this.pos.addInPlace(normalVector); 
+            } else if(!other.fixed){ 
+                other.pos.subtractInPlace(normalVector); 
             }
-
-            else if(!this.fixed){ this.pos = this.pos.add(normalVector); }
-            else if(!other.fixed){ other.pos = other.pos.subtract(normalVector); }
 
         }
 
-        if(aggrType == 1){ //inelastic collision
+
+        if(collideType == 1){ //inelastic collision
 
             if(!this.fixed && !other.fixed){
                 double a1 = (m1 * v1 + m2 * v2) / (m1 + m2) - v1;
@@ -93,9 +143,7 @@ public class Particle{
             else if(!this.fixed){ this.accel = this.accel.add(normal.scale(-v1)); }
             else if(!other.fixed){ other.accel = other.accel.add(normal.scale(-v2)); }
 
-        }
-
-        if(aggrType == 2){ //elastic collision
+        } else if(collideType == 2){ //elastic collision
 
             if(!this.fixed && !other.fixed){
                 double a1 = 2 * m2 * (v2 - v1) / (m1 + m2);
@@ -119,17 +167,17 @@ public class Particle{
         double dist = displacement.abs();
         double overlap = Math.max((this.rad + other.rad) - dist, 0);
 
-        double distSquared = (dist + overlap/2) * (dist + overlap/2);
+        double distSquared = Math.pow(dist + overlap/2, 2);
 
         Vector gravity = displacement.normalize().scale((c.GRAV_CONST * this.mass * other.mass) / distSquared);
-        if(!this.fixed) this.accel = this.accel.subtract(gravity.scale(1/this.mass));
-        if(!other.fixed) other.accel = other.accel.add(gravity.scale(1/other.mass));
+        if(!this.fixed) this.accel.subtractInPlace(gravity.scale(1/this.mass));
+        if(!other.fixed) other.accel.addInPlace(gravity.scale(1/other.mass));
     }
 
     public void update(){
         if(fixed) return;
-        vel = vel.add(accel);
-        pos = pos.add(vel);
+        vel.addInPlace(accel);
+        pos.addInPlace(vel);
     }
 
     public void clearAccel(){

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 
 import utils.utils.Particle;
 import utils.utils.Vector;
+import utils.utils.Particle.Shape;
 
 public class OrthographicProjector extends Camera{
     public OrthographicProjector(Vector pos, Vector normal){
@@ -13,6 +14,35 @@ public class OrthographicProjector extends Camera{
 
     public OrthographicProjector(Vector pos){
         this(pos, pos.normalize().scale(-1));
+    }
+
+    public void zoom(double ox, double oy, double ticks) {
+
+        Vector up = new Vector(0, 1, 0);
+        Vector right = normal.cross(up).normalize();
+        up = right.cross(normal).normalize();
+
+        Vector shiftVec = right.scale(-ticks*ox).add(up.scale(-ticks*oy));
+
+        Vector origin = pos.add(shiftVec.scale(zoom)).add(normal.scale(zoom));
+        zoom = Math.max(zoom*Math.pow(1.05, ticks), 0.00000001);
+        pos = origin.subtract((normal.scale(zoom)).add((shiftVec).scale(zoom)));
+    }
+
+    public void scale(double ticks) { // scale the image by given mouse-ticks
+        scale = Math.max(scale+ticks, 0.00000001);
+    }
+
+    public void shift(double dx, double dy) { // pan by given x,y on-screen/relative to screen
+        dx*=zoom; dy*=zoom;
+
+        Vector up = new Vector(0, 1, 0);
+        Vector right = normal.cross(up).normalize();
+        up = right.cross(normal).normalize();
+
+        Vector shiftVec = right.scale(dx).add(up.scale(dy));
+
+        pos = pos.add(shiftVec);
     }
 
     public void orbit(double ox, double oy, double dx, double dy) { // rotate by given x,y on-screen/relative to screen
@@ -51,7 +81,7 @@ public class OrthographicProjector extends Camera{
             r /= zoom;
             
             g.setColor(p.color);
-            if(p.shape.equals("circle")){
+            if(p.shape==Shape.SPHERE){
                 g.fillOval((int) ((x-r)*scale), (int) ((y-r)*scale), (int) ((2*r)*scale), (int) ((2*r)*scale));
             }
         }

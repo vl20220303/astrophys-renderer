@@ -55,7 +55,7 @@ public class Simulator implements Runnable {
             }
 
             int cycle = (int) ((System.nanoTime() - cycleStart) / 1e6);
-            System.out.printf("%s SIMULATOR | update: %d, wait: %d, cycle: %d %s \n", "\u001B[31m", elapsed, step, cycle, "\u001B[0m");
+            System.out.printf("%s SIMULATOR %s| update: %d, wait: %d, cycle: %d \n", "\u001B[31m", "\u001B[0m", elapsed, step, cycle);
         }
     }
 

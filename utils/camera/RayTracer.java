@@ -18,8 +18,29 @@ public class RayTracer extends Camera{
         super(pos, pos.normalize().scale(-1));
     }
 
+     @Override
+    public void zoom(double ox, double oy, double ticks) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'zoom'");
+    }
+
     @Override
-    public void zoom(double ox, double oy, double ticks) { super.zoom(ox, oy, ticks); }
+    public void scale(double ticks) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'scale'");
+    }
+
+    @Override
+    public void shift(double dx, double dy) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'shift'");
+    }
+
+    @Override
+    public void orbit(double ox, double oy, double dx, double dy) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'orbit'");
+    }
 
     @Override
     public void render(ArrayList<Particle> particles, Graphics2D g){
@@ -73,4 +94,5 @@ public class RayTracer extends Camera{
     protected Point[] projectLineToScreen(Vector p, Vector q) {
         return null;
     }
+
 }

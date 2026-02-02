@@ -15,53 +15,27 @@ public abstract class Camera {
 
     protected Settings environment;
     public Vector normal, pos;
-    public double zoom;
-    public double scale = 1;
+    public double zoom = 1, scale = 1;
+
+    public boolean renderLighting, renderGlow;
 
     public Camera(Vector pos, Vector normal){
         this.pos = pos; this.normal = normal.normalize();
         this.zoom = normal.abs();
     }
 
+    public void useLighting(){ this.renderLighting = true; }
+    public void useGlow(){ this.renderGlow = true; }
+
     public void setEnvironment(Settings environment){ this.environment = environment; }
 
-    public void zoom(double ox, double oy, double ticks){
-        Vector up = new Vector(0, 1, 0);
-        Vector right = normal.cross(up).normalize();
-        up = right.cross(normal).normalize();
+    public abstract void zoom(double ox, double oy, double ticks);
 
-        Vector shiftVec = right.scale(-ticks*ox).add(up.scale(-ticks*oy));
+    public abstract void scale(double ticks);
 
-        Vector origin = pos.add(shiftVec.scale(zoom)).add(normal.scale(zoom));
-        zoom = Math.max(zoom*Math.pow(1.05, ticks), 0.00000001);
-        pos = origin.subtract((normal.scale(zoom)).add((shiftVec).scale(zoom)));
-    }
+    public abstract void shift(double dx, double dy);
 
-    public void scale(double ticks){ scale = Math.max(scale+ticks, 0.00000001);}
-
-    public void shift(double dx, double dy){
-        Vector up = new Vector(0, 1, 0);
-        Vector right = normal.cross(up).normalize();
-        up = right.cross(normal).normalize();
-
-        Vector shiftVec = right.scale(dx).add(up.scale(dy));
-
-        pos = pos.add(shiftVec);
-    }
-
-    public void orbit(double ox, double oy, double dx, double dy){
-        ox*=zoom; oy*=zoom;
-        Vector up = new Vector(0, 1, 0);
-        Vector right = normal.cross(up).normalize();
-        
-        if(1-Math.pow(normal.dot(up),2) < Math.pow(dy, 2)) {
-            dy*=Math.max(0, -Math.signum(normal.dot(up)*dy));
-        }
-
-        Vector origin = pos.add(normal.scale(zoom));
-        normal = normal.rotateAroundAxis(up, dx).rotateAroundAxis(right, dy).normalize();
-        pos = origin.subtract(normal.scale(zoom));
-    }
+    public abstract void orbit(double ox, double oy, double dx, double dy);
     
     public abstract void render(ArrayList<Particle> particles, Graphics2D g);
 
