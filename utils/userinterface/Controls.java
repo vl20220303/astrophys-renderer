@@ -14,7 +14,9 @@ public class Controls implements MouseListener, MouseMotionListener, MouseWheelL
     private final JPanel panel;
 
     private Point lastMouse;
-    private boolean leftDown, rightDown, controlDown;
+    private boolean leftDown, rightDown;
+
+    private boolean shiftDown, controlDown;
 
     public Controls(Camera camera, JPanel panel) {
         this.camera = camera;
@@ -51,36 +53,47 @@ public class Controls implements MouseListener, MouseMotionListener, MouseWheelL
         int dx = e.getX() - lastMouse.x;
         int dy = e.getY() - lastMouse.y;
         if (leftDown) {
-            camera.shift(-dx*SHIFT_PER_TICK/camera.scale*2, dy*SHIFT_PER_TICK/camera.scale*2);
+            camera.shift(-dx*SHIFT_PER_TICK, dy*SHIFT_PER_TICK);
         } else if (rightDown) {
-            camera.orbit(lastMouse.x, lastMouse.y, -dx*ROTATE_PER_TICK, dy*ROTATE_PER_TICK);
+            camera.orbit(-dx*ROTATE_PER_TICK, dy*ROTATE_PER_TICK);
         }
         lastMouse = e.getPoint();
         panel.repaint();
     }
 
     @Override
-    public void mouseWheelMoved(MouseWheelEvent e) {
+    public void mouseClicked(MouseEvent e) {
         if (controlDown) {
+            camera.jump(e.getPoint().getX() - panel.getWidth()/2, -e.getPoint().getY() + panel.getHeight()/2);
+        }
+    }
+
+    @Override
+    public void mouseWheelMoved(MouseWheelEvent e) {
+        if (shiftDown) {
+            camera.focus(-e.getPreciseWheelRotation()*ZOOM_PER_TICK);
+        } else if (controlDown) {
             camera.scale(e.getPreciseWheelRotation()*ZOOM_PER_TICK);
         } else {
-            camera.zoom((e.getPoint().getX() - panel.getWidth() / 2)*SHIFT_PER_TICK, (e.getPoint().getY() - panel.getHeight() / 2)*SHIFT_PER_TICK, -e.getPreciseWheelRotation()*ZOOM_PER_TICK);
+            camera.zoom(e.getPoint().getX() - panel.getWidth()/2, -e.getPoint().getY() + panel.getHeight()/2, -e.getPreciseWheelRotation()*ZOOM_PER_TICK);
         }
         panel.repaint();
     }
 
     // Unused mouse events
     @Override public void mouseMoved(MouseEvent e) {}
-    @Override public void mouseClicked(MouseEvent e) {}
     @Override public void mouseEntered(MouseEvent e) {}
     @Override public void mouseExited(MouseEvent e) {}
 
-    // Keypress events for scaling (ctrl+wheel)
+    // Keypress events
     @Override
     public void keyPressed(KeyEvent e) {
         switch (e.getKeyCode()) {
             case KeyEvent.VK_CONTROL:
                 controlDown = true;
+                break;
+            case KeyEvent.VK_SHIFT:
+                shiftDown = true;
                 break;
         }
     }
@@ -90,6 +103,9 @@ public class Controls implements MouseListener, MouseMotionListener, MouseWheelL
         switch (e.getKeyCode()) {
             case KeyEvent.VK_CONTROL:
                 controlDown = false;
+                break;
+            case KeyEvent.VK_SHIFT:
+                shiftDown = false;
                 break;
         }
     }

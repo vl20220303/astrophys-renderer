@@ -22,7 +22,7 @@ public class OrthographicProjector extends Camera{
         Vector right = normal.cross(up).normalize();
         up = right.cross(normal).normalize();
 
-        Vector shiftVec = right.scale(-ticks*ox).add(up.scale(-ticks*oy));
+        Vector shiftVec = right.scale(-ticks*ox).add(up.scale(-ticks*oy)).scaleInPlace(-Math.signum(ticks));
 
         Vector origin = pos.add(shiftVec.scale(zoom)).add(normal.scale(zoom));
         zoom = Math.max(zoom*Math.pow(1.05, ticks), 0.00000001);
@@ -33,8 +33,10 @@ public class OrthographicProjector extends Camera{
         scale = Math.max(scale+ticks, 0.00000001);
     }
 
+    public void focus(double ticks){}
+
     public void shift(double dx, double dy) { // pan by given x,y on-screen/relative to screen
-        dx*=zoom; dy*=zoom;
+        dx*=zoom/scale; dy*=zoom/scale;
 
         Vector up = new Vector(0, 1, 0);
         Vector right = normal.cross(up).normalize();
@@ -45,8 +47,20 @@ public class OrthographicProjector extends Camera{
         pos = pos.add(shiftVec);
     }
 
-    public void orbit(double ox, double oy, double dx, double dy) { // rotate by given x,y on-screen/relative to screen
-        ox*=zoom; oy*=zoom;
+    @Override
+    public void jump(double ox, double oy) {
+        ox *= zoom/scale; oy *= zoom/scale;
+
+        Vector up = new Vector(0, 1, 0);
+        Vector right = normal.cross(up).normalize();
+        up = right.cross(normal).normalize();
+
+        Vector shiftVec = right.scale(ox).addInPlace(up.scale(oy));
+
+        pos.addInPlace(shiftVec);
+    }
+
+    public void orbit(double dx, double dy) { // rotate by given x,y on-screen/relative to screen
         Vector up = new Vector(0, 1, 0);
         Vector right = normal.cross(up).normalize();
         

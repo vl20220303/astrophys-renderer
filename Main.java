@@ -31,7 +31,7 @@ public class Main {
                                         .use30FPS()
                                         .enableViewIndicator()
                                         .enableZoomIndicator()
-                                        .setBackgroundColor(Color.BLACK)
+                                        // .setBackgroundColor(Color.BLACK)
                                         .build();
 
         
@@ -96,13 +96,9 @@ public class Main {
         
         particles.add(sun);
         particles.add(planet);
-        particles.addAll(cloud);
-        particles.addAll(cloud2);
-        particles.addAll(cloud3);
-
-        // System.out.println(cloud.size());
-        // System.out.println(cloud2.size());
-        // System.out.println(cloud3.size());
+        // particles.addAll(cloud);
+        // particles.addAll(cloud2);
+        // particles.addAll(cloud3);
 
         Simulator simulator = new Simulator(particles, constants, environment);
         // simulator.disableGravity();
@@ -123,10 +119,11 @@ public class Main {
         // renderer2.init(frame2);
         // renderer2.run();
 
-        // Camera camera3 = new RayTracer(new Vector(0, 0, -100));
-        // Renderer renderer3 = new Renderer(camera3, simulator, environment);
-        // JFrame frame3 = new JFrame("Astrophys Renderer - Raytraced");
-        // renderer3.init(frame3);
-        // renderer3.run();
+        Camera camera3 = new RayTracer(new Vector(0, 0, 1000));
+        camera3.useLighting();
+        Renderer renderer3 = new Renderer(camera3, simulator, environment);
+        JFrame frame3 = new JFrame("Astrophys Renderer - Raytraced");
+        renderer3.init(frame3);
+        renderer3.run();
     }
 }

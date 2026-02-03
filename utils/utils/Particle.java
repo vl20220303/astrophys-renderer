@@ -1,7 +1,6 @@
 package utils.utils;
 import java.awt.Color;
 import java.nio.file.NotLinkException;
-import java.util.ArrayList;
 
 import utils.settings.Constants;
 
@@ -87,7 +86,6 @@ public class Particle{
 
     public void collide(Particle other, Constants c){
         if(this == other) return;
-
         if(this.fixed && other.fixed) return;
 
         int collideType = Math.min(this.collideType.val * other.collideType.val, 2);
@@ -129,32 +127,27 @@ public class Particle{
 
         }
 
-
         if(collideType == 1){ //inelastic collision
 
-            if(!this.fixed && !other.fixed){
-                double a1 = (m1 * v1 + m2 * v2) / (m1 + m2) - v1;
-                double a2 = (m1 * v1 + m2 * v2) / (m1 + m2) - v2;
+            if(!this.fixed && other.fixed){ this.accel = this.accel.add(normal.scale(-v1)); }
+            else if(this.fixed && !other.fixed){ other.accel = other.accel.add(normal.scale(-v2)); }
+            else if(!this.fixed && !other.fixed){
+                double a = (m1 * v1 + m2 * v2) / (m1 + m2);
 
-                this.accel = this.accel.add(normal.scale(a1));
-                other.accel = other.accel.add(normal.scale(a2));
+                this.accel = this.accel.add(normal.scale(a-v1));
+                other.accel = other.accel.add(normal.scale(a-v2));
             }
-
-            else if(!this.fixed){ this.accel = this.accel.add(normal.scale(-v1)); }
-            else if(!other.fixed){ other.accel = other.accel.add(normal.scale(-v2)); }
 
         } else if(collideType == 2){ //elastic collision
 
-            if(!this.fixed && !other.fixed){
-                double a1 = 2 * m2 * (v2 - v1) / (m1 + m2);
-                double a2 = 2 * m1 * (v1 - v2) / (m1 + m2);
+            if(!this.fixed && other.fixed){ this.accel = this.accel.add(normal.scale(-2*v1)); }
+            else if(this.fixed && !other.fixed){ other.accel = other.accel.add(normal.scale(-2*v2)); }
+            else if(!this.fixed && !other.fixed){
+                double a = 2 * (v2 - v1) / (m1 + m2);
                 
-                this.accel = this.accel.add(normal.scale(a1));
-                other.accel = other.accel.add(normal.scale(a2));
+                this.accel = this.accel.add(normal.scale(a * m2));
+                other.accel = other.accel.add(normal.scale(-a * m1));
             }
-
-            else if(!this.fixed){ this.accel = this.accel.add(normal.scale(-2*v1)); }
-            else if(!other.fixed){ other.accel = other.accel.add(normal.scale(-2*v2)); }
 
         }
 
@@ -162,6 +155,7 @@ public class Particle{
 
     public void gravitate(Particle other, Constants c){
         if(this == other) return;
+        if(this.fixed && other.fixed) return;
 
         Vector displacement = this.pos.subtract(other.pos);
         double dist = displacement.abs();

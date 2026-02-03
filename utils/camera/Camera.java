@@ -30,12 +30,13 @@ public abstract class Camera {
     public void setEnvironment(Settings environment){ this.environment = environment; }
 
     public abstract void zoom(double ox, double oy, double ticks);
-
     public abstract void scale(double ticks);
+    public abstract void focus(double ticks);
 
     public abstract void shift(double dx, double dy);
+    public abstract void jump(double ox, double oy);
 
-    public abstract void orbit(double ox, double oy, double dx, double dy);
+    public abstract void orbit(double dx, double dy);
     
     public abstract void render(ArrayList<Particle> particles, Graphics2D g);
 

@@ -11,7 +11,7 @@ import utils.utils.Vector;
 import utils.utils.Particle.Shape;
 
 public class PerspectiveProjector extends Camera{
-    public static final int CONSTANT_SCALING = 100;
+    private static final int CONSTANT_SCALING = 100;
 
     public PerspectiveProjector(Vector pos, Vector normal){
         super(pos, normal);
@@ -28,7 +28,7 @@ public class PerspectiveProjector extends Camera{
         Vector right = normal.cross(up).normalize();
         up = right.cross(normal).normalize();
 
-        Vector shiftVec = right.scale(-ticks*ox).add(up.scale(-ticks*oy));
+        Vector shiftVec = right.scale(-ticks*ox).add(up.scale(-ticks*oy)).scaleInPlace(-Math.signum(ticks));
 
         Vector origin = pos.add(shiftVec.scale(zoom)).add(normal.scale(zoom));
         zoom = Math.max(zoom*Math.pow(1.05, ticks), 0.00000001);
@@ -39,9 +39,11 @@ public class PerspectiveProjector extends Camera{
         scale = Math.max(scale+ticks, 0.00000001);
     }
 
+    public void focus(double ticks){}
+
     public void shift(double dx, double dy) { // pan by given x,y on-screen/relative to screen
-        dx *= zoom/CONSTANT_SCALING;
-        dy *= zoom/CONSTANT_SCALING;
+        dx *= zoom/CONSTANT_SCALING/scale * 2;
+        dy *= zoom/CONSTANT_SCALING/scale * 2;
 
         Vector up = new Vector(0, 1, 0);
         Vector right = normal.cross(up).normalize();
@@ -49,11 +51,24 @@ public class PerspectiveProjector extends Camera{
 
         Vector shiftVec = right.scale(dx).addInPlace(up.scale(dy));
 
-        pos = pos.add(shiftVec);
+        pos.addInPlace(shiftVec);
     }
 
-    public void orbit(double ox, double oy, double dx, double dy) { // rotate by given x,y on-screen/relative to screen
-        ox*=zoom; oy*=zoom;
+    
+    @Override
+    public void jump(double dx, double dy) {
+        dx *= zoom/scale/CONSTANT_SCALING; dy *= zoom/scale/CONSTANT_SCALING;
+
+        Vector up = new Vector(0, 1, 0);
+        Vector right = normal.cross(up).normalize();
+        up = right.cross(normal).normalize();
+
+        Vector shiftVec = right.scale(dx).addInPlace(up.scale(dy));
+
+        pos.addInPlace(shiftVec);
+    }
+
+    public void orbit(double dx, double dy) { // rotate by given x,y on-screen/relative to screen
         Vector up = new Vector(0, 1, 0);
         Vector right = normal.cross(up).normalize();
         
