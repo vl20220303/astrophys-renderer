@@ -28,7 +28,7 @@ public class PerspectiveProjector extends Camera{
         Vector right = normal.cross(up).normalize();
         up = right.cross(normal).normalize();
 
-        Vector shiftVec = right.scale(-ticks*ox).add(up.scale(-ticks*oy)).scaleInPlace(-Math.signum(ticks));
+        Vector shiftVec = right.scale(ox).add(up.scale(oy)).scaleInPlace(Math.abs(ticks));
 
         Vector origin = pos.add(shiftVec.scale(zoom)).add(normal.scale(zoom));
         zoom = Math.max(zoom*Math.pow(1.05, ticks), 0.00000001);

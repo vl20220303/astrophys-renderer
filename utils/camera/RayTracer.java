@@ -8,8 +8,8 @@ import utils.utils.Particle;
 import utils.utils.Vector;
 
 public class RayTracer extends Camera{
-    private int pixelHeight = 3, pixelWidth = 3;
-    private double focalLength;
+    private int pixelHeight = 3, pixelWidth = 2;
+    public double focalLength;
 
     public RayTracer(Vector pos, Vector normal){
         super(pos, normal);
@@ -34,15 +34,11 @@ public class RayTracer extends Camera{
 
     @Override
     public void focus(double ticks){
-        focalLength = Math.min(Math.max(focalLength + focalLength*ticks, 1e-8), 1e8);
-        System.out.println(focalLength);
+        focalLength = Math.min(Math.max(focalLength*(1+ticks), 1e-8), 1e8);
     }
 
     @Override
     public void shift(double dx, double dy) {
-        dx *= zoom;
-        dy *= zoom;
-
         Vector up = new Vector(0, 1, 0);
         Vector right = normal.cross(up).normalize();
         up = right.cross(normal).normalize();
@@ -54,8 +50,13 @@ public class RayTracer extends Camera{
     
     @Override
     public void jump(double dx, double dy) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'jump'");
+        Vector up = new Vector(0, 1, 0);
+        Vector right = normal.cross(up).normalize();
+        up = right.cross(normal).normalize();
+
+        Vector shiftVec = right.scale(dx).addInPlace(up.scale(dy));
+
+        pos.addInPlace(shiftVec);
     }
 
     @Override
@@ -78,6 +79,8 @@ public class RayTracer extends Camera{
         Vector right = normal.cross(up).normalize();
         up = right.cross(normal).normalize();
 
+        
+
         Vector focus = normal.scale(-focalLength);
         for(int i = (int) (-environment.RESOLUTION * environment.ASPECT_RATIO/2); i<environment.RESOLUTION * environment.ASPECT_RATIO/2; i+=pixelWidth){
             for(int j = (int) (-environment.RESOLUTION/2); j<environment.RESOLUTION/2; j+=pixelHeight){
@@ -90,26 +93,24 @@ public class RayTracer extends Camera{
 
     private Color getColor(Vector focus, Vector pixel, ArrayList<Particle> particles){
         Color color = environment.BACKGROUND_COLOR;
-        if(!renderLighting){
-            Object[] intersection = getIntersection(pixel, pixel.subtract(focus), particles);
-            Particle particle = (Particle) intersection[0];
-            if(particle!=null) color = particle.color;
-        } else{
-            Vector origin = pixel;
-            Vector ray = pixel.subtract(focus);
-            for(int i = 0; i<3; i++){
-                Object[] intersection = getIntersection(origin, ray, particles);
-                Particle particle = (Particle) intersection[0];
-                Vector newOrigin = (Vector) intersection[1];
-                if(particle!=null){
-                    color = particle.color;
+        int reflections = 2;
 
-                    Vector incoming = ray.normalize().scale(-1);
-                    Vector normal = newOrigin.subtract(particle.pos).normalize();
-                    ray = incoming.add(normal.scale(2*incoming.dot(normal)));
-                    origin = newOrigin;
-                }
-            }
+        Vector origin = pixel;
+        Vector ray = pixel.subtract(focus);
+        for(int i = 0; i<reflections; i++){
+            Object[] intersection = getIntersection(origin, ray, particles);
+            Particle particle = (Particle) intersection[0];
+            Vector newOrigin = (Vector) intersection[1];
+
+            if(particle==null){ break; }
+
+            color = particle.color;
+
+            Vector incoming1 = ray.scale(-1).normalize();
+            Vector incoming2 = newOrigin.subtract(origin).scale(-1).normalize();
+            Vector normal = particle.pos.subtract(newOrigin).normalize();
+            ray = incoming1.add(normal.scale(2*incoming1.dot(normal))).normalize();
+            origin = newOrigin;
         }
         return color;
     }
@@ -130,7 +131,7 @@ public class RayTracer extends Camera{
             double dist = (-b - Math.sqrt(discriminant))/(2*a);
             if(dist<0) dist = -dist - b/a;
 
-            if(dist < 0 || dist > intersectDist) continue;
+            if(dist < 1e-9 || dist > intersectDist) continue;
             intersectParticle = p; intersectDist = dist;
         }
         Vector intersectVec = rayOrigin.add(rayVec.scale(intersectDist));

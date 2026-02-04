@@ -2,7 +2,7 @@ package utils.runners;
 import javax.swing.*;
 
 import utils.camera.Camera;
-import utils.settings.Settings;
+import utils.settings.Environment;
 import utils.utils.Particle;
 import utils.userinterface.Display;
 import utils.userinterface.Controls;
@@ -14,13 +14,13 @@ public class Renderer extends JPanel {
     private final Camera camera;
     private final Display display;
     private final Simulator simulator;
-    private final Settings environment;
+    private final Environment environment;
 
-    public Renderer(Camera camera, Simulator simulator, Settings environment) {
+    public Renderer(Camera camera, Simulator simulator, Environment environment) {
         this(camera, simulator, new Display(camera), environment);
     }
 
-    public Renderer(Camera camera, Simulator simulator, Display display, Settings environment) {
+    public Renderer(Camera camera, Simulator simulator, Display display, Environment environment) {
         this.camera = camera;
         this.display = display;
         this.simulator = simulator;
@@ -67,9 +67,9 @@ public class Renderer extends JPanel {
         camera.render(particles, g2d);
 
         
-        
-        display.drawZoomIndicator(g2d);
         display.drawMiniOrigin(g2d);
+        display.drawZoomIndicator(g2d);
+        display.drawFocusIndicator(g2d);
 
         g2d.dispose();
 

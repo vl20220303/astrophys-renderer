@@ -5,19 +5,20 @@ import java.awt.Point;
 import java.util.Arrays;
 
 import utils.camera.Camera;
-import utils.settings.Settings;
+import utils.camera.RayTracer;
+import utils.settings.Environment;
 import utils.utils.Vector;
 
 public class Display{
     
     Camera camera;
-    Settings environment;
+    Environment environment;
 
     public Display(Camera c){
         this.camera = c;
     }
 
-    public void setEnvironment(Settings environment){ this.environment = environment; }
+    public void setEnvironment(Environment environment){ this.environment = environment; }
 
     public void drawMiniOrigin(Graphics2D g){
         if(!environment.DRAW_MINI_ORIGIN) return;
@@ -56,6 +57,22 @@ public class Display{
         final int scaleRadius = (int) (5*(camera.scale>1 ? Math.log(Math.E - 1 + camera.scale) : camera.scale));
 
         g.setColor(Color.RED);
+        g.fillOval(offset.x - scaleRadius, offset.y - scaleRadius, 2*scaleRadius, 2*scaleRadius);
+        g.setColor(Color.BLUE);
+        g.drawOval(offset.x - 5, offset.y - 5,10,10);
+        g.setColor(Color.BLACK);
+    }
+
+    public void drawFocusIndicator(Graphics2D g){
+        if(!environment.DRAW_FOCUS_INDICATOR) return;
+        if(!(camera instanceof RayTracer)) return;
+
+        final Point offset = new Point((int) (environment.RESOLUTION * environment.ASPECT_RATIO * 0.4), (int) (environment.RESOLUTION * 0.30));
+
+        final double focusToZoom = ((RayTracer) camera).focalLength/camera.zoom;
+        final int scaleRadius = (int) (5*(focusToZoom>1 ? Math.log(Math.E - 1 + focusToZoom) : focusToZoom));
+
+        g.setColor(Color.GREEN);
         g.fillOval(offset.x - scaleRadius, offset.y - scaleRadius, 2*scaleRadius, 2*scaleRadius);
         g.setColor(Color.BLUE);
         g.drawOval(offset.x - 5, offset.y - 5,10,10);

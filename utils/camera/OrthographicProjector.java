@@ -22,15 +22,15 @@ public class OrthographicProjector extends Camera{
         Vector right = normal.cross(up).normalize();
         up = right.cross(normal).normalize();
 
-        Vector shiftVec = right.scale(-ticks*ox).add(up.scale(-ticks*oy)).scaleInPlace(-Math.signum(ticks));
+        Vector shiftVec = right.scale(ox).add(up.scale(oy)).scaleInPlace(Math.abs(ticks));
 
         Vector origin = pos.add(shiftVec.scale(zoom)).add(normal.scale(zoom));
-        zoom = Math.max(zoom*Math.pow(1.05, ticks), 0.00000001);
+        zoom = Math.min(Math.max(zoom*Math.pow(1.05, ticks), 1e-8), 1e8);
         pos = origin.subtract((normal.scale(zoom)).add((shiftVec).scale(zoom)));
     }
 
     public void scale(double ticks) { // scale the image by given mouse-ticks
-        scale = Math.max(scale+ticks, 0.00000001);
+        scale = Math.min(Math.max(scale+ticks, 1e-8), 1e8);
     }
 
     public void focus(double ticks){}
@@ -89,10 +89,12 @@ public class OrthographicProjector extends Camera{
             
             double x = rel.dot(right), y = rel.dot(up), r = p.rad;
 
-            if(r/zoom > environment.RESOLUTION * environment.ASPECT_RATIO) continue;
+            // if(r/zoom > environment.RESOLUTION * environment.ASPECT_RATIO) continue;
             x /= zoom;
             y /= zoom;
             r /= zoom;
+
+            if(r<0.5) continue;
             
             g.setColor(p.color);
             if(p.shape==Shape.SPHERE){

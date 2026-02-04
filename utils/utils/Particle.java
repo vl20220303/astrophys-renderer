@@ -1,6 +1,6 @@
 package utils.utils;
 import java.awt.Color;
-import java.nio.file.NotLinkException;
+// import java.nio.file.NotLinkException;
 
 import utils.settings.Constants;
 
@@ -20,6 +20,8 @@ public class Particle{
 
     public Color color = Color.BLACK;
     public double luminosity = 0;
+    public double reflectivity = 0;
+    public double diffusion = 0;
 
     public boolean fixed = false;
 
@@ -57,6 +59,9 @@ public class Particle{
 
         this.fixed = p.fixed; 
         this.collideType = p.collideType;
+
+        this.reflectivity = p.reflectivity;
+        this.diffusion = p.diffusion;
     }
 
     //* Set Position */

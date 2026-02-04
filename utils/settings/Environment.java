@@ -1,7 +1,7 @@
 package utils.settings;
 import java.awt.Color;
 
-public class Settings {
+public class Environment {
     public final int TICK_SPEED;
     public final int FRAME_TIME;
 
@@ -16,8 +16,9 @@ public class Settings {
     public final boolean DRAW_ORIGIN_GRID;      //draws xy plane
     public final boolean DRAW_MINI_ORIGIN;      //draws origin axes reference in top right
     public final boolean DRAW_ZOOM_INDICATOR;   //draws zoom indicator in top right
+    public final boolean DRAW_FOCUS_INDICATOR;
 
-    public Settings(int tick_speed, int frame_time, int resolution, double aspect_ratio, boolean antialiasing_on, Color background_color, boolean draw_origin, boolean draw_origin_grid, boolean draw_mini_origin, boolean draw_zoom_indicator){
+    public Environment(int tick_speed, int frame_time, int resolution, double aspect_ratio, boolean antialiasing_on, Color background_color, boolean draw_origin, boolean draw_origin_grid, boolean draw_mini_origin, boolean draw_zoom_indicator, boolean draw_focus_indicator){
         this.TICK_SPEED = tick_speed;
         this.FRAME_TIME = frame_time;
         this.RESOLUTION = resolution;
@@ -28,6 +29,7 @@ public class Settings {
         this.DRAW_ORIGIN_GRID = draw_origin_grid;
         this.DRAW_MINI_ORIGIN = draw_mini_origin;
         this.DRAW_ZOOM_INDICATOR = draw_zoom_indicator;
+        this.DRAW_FOCUS_INDICATOR = draw_focus_indicator;
     }
 
     public static class Builder{
@@ -43,9 +45,10 @@ public class Settings {
         private boolean draw_origin_grid = false;
         private boolean draw_mini_origin = false;
         private boolean draw_zoom_indicator = false;
+        private boolean draw_focus_indicator = false;
 
-        public Settings build(){
-            return new Settings(tick_speed, frame_time, resolution, aspect_ratio, antialiasing_on, background_color, draw_origin, draw_origin_grid, draw_mini_origin, draw_zoom_indicator);
+        public Environment build(){
+            return new Environment(tick_speed, frame_time, resolution, aspect_ratio, antialiasing_on, background_color, draw_origin, draw_origin_grid, draw_mini_origin, draw_zoom_indicator, draw_focus_indicator);
         }
 
         /** Set tick speed (milliseconds). */
@@ -78,6 +81,7 @@ public class Settings {
         public Builder enableOriginGrid(){ draw_origin_grid = true; return this; }
         public Builder enableViewIndicator(){ draw_mini_origin = true; return this; }
         public Builder enableZoomIndicator(){ draw_zoom_indicator = true; return this; }
+        public Builder enableFocusIndicator(){ draw_focus_indicator = true; return this; }
 
     }
 

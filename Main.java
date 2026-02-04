@@ -14,7 +14,7 @@ import utils.generator.Sphere;
 import utils.runners.Renderer;
 import utils.runners.Simulator;
 import utils.settings.Constants;
-import utils.settings.Settings;
+import utils.settings.Environment;
 import utils.utils.Particle;
 import utils.utils.Vector;
 import utils.utils.Particle.Behavior;
@@ -25,12 +25,13 @@ public class Main {
         Constants constants = new Constants();
         constants.setScale(1e10).setWeight(1e24).setTime(1e3).init();
 
-        Settings environment = new Settings.Builder()
+        Environment environment = new Environment.Builder()
                                         .use720p()
                                         .setTickSpeed(10)
                                         .use30FPS()
                                         .enableViewIndicator()
                                         .enableZoomIndicator()
+                                        .enableFocusIndicator()
                                         // .setBackgroundColor(Color.BLACK)
                                         .build();
 
@@ -63,7 +64,7 @@ public class Main {
         eq.setup();
         ArrayList<Particle> cloud = 
             eq.withRotationalVel(Vector.Z_AXIS.add(Vector.Y_AXIS), (Double r) -> 8*Math.pow(r, -0.5))
-            .generate(1500,
+            .generate(10,
                     new Particle()
                         .setAttributes(15, 2e12, Shape.SPHERE)
                         .setColor(Color.GREEN, 0)
@@ -96,7 +97,7 @@ public class Main {
         
         particles.add(sun);
         particles.add(planet);
-        // particles.addAll(cloud);
+        particles.addAll(cloud);
         // particles.addAll(cloud2);
         // particles.addAll(cloud3);
 
@@ -107,17 +108,17 @@ public class Main {
         simulatorThread.start();
 
         Camera camera = new PerspectiveProjector(new Vector(0, 0, 1000));
-        camera.useGlow();
+        // camera.useGlow();
         Renderer renderer = new Renderer(camera, simulator, environment);
         JFrame frame = new JFrame("Astrophys Renderer");
         renderer.init(frame);
         renderer.run();
 
-        // Camera camera2 = new OrthographicProjector(new Vector(0, 0, 500));
-        // Renderer renderer2 = new Renderer(camera2, simulator, environment);
-        // JFrame frame2 = new JFrame("Astrophys Renderer - Alternate Angle");
-        // renderer2.init(frame2);
-        // renderer2.run();
+        Camera camera2 = new OrthographicProjector(new Vector(0, 0, 1000));
+        Renderer renderer2 = new Renderer(camera2, simulator, environment);
+        JFrame frame2 = new JFrame("Astrophys Renderer - Alternate Angle");
+        renderer2.init(frame2);
+        renderer2.run();
 
         Camera camera3 = new RayTracer(new Vector(0, 0, 1000));
         camera3.useLighting();

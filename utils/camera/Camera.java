@@ -1,19 +1,17 @@
 package utils.camera;
 import java.util.ArrayList;
-import java.util.Arrays;
 
-import utils.settings.Settings;
+import utils.settings.Environment;
 import utils.utils.Particle;
 import utils.utils.Vector;
 
-import java.awt.GradientPaint;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Point;
 
 public abstract class Camera {
 
-    protected Settings environment;
+    protected Environment environment;
     public Vector normal, pos;
     public double zoom = 1, scale = 1;
 
@@ -27,7 +25,7 @@ public abstract class Camera {
     public void useLighting(){ this.renderLighting = true; }
     public void useGlow(){ this.renderGlow = true; }
 
-    public void setEnvironment(Settings environment){ this.environment = environment; }
+    public void setEnvironment(Environment environment){ this.environment = environment; }
 
     public abstract void zoom(double ox, double oy, double ticks);
     public abstract void scale(double ticks);

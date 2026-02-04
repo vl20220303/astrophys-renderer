@@ -2,19 +2,19 @@ package utils.runners;
 import java.util.ArrayList;
 
 import utils.settings.Constants;
-import utils.settings.Settings;
+import utils.settings.Environment;
 import utils.utils.Particle;
 
 public class Simulator implements Runnable {
     private final ArrayList<Particle> particles;
     private final Constants constants;
-    private final Settings environment;
+    private final Environment environment;
     private final Object lock = new Object();
     private boolean running = true;
 
     private boolean GRAVITY_ENABLED = true;
 
-    public Simulator(ArrayList<Particle> particles, Constants constants, Settings environment) {
+    public Simulator(ArrayList<Particle> particles, Constants constants, Environment environment) {
         this.particles = particles;
         this.constants = constants;
         this.environment = environment;
