@@ -64,7 +64,7 @@ public class Main {
         eq.setup();
         ArrayList<Particle> cloud = 
             eq.withRotationalVel(Vector.Z_AXIS.add(Vector.Y_AXIS), (Double r) -> 8*Math.pow(r, -0.5))
-            .generate(10,
+            .generate(3000,
                     new Particle()
                         .setAttributes(15, 2e12, Shape.SPHERE)
                         .setColor(Color.GREEN, 0)
@@ -76,7 +76,7 @@ public class Main {
         eq2.setup();
         ArrayList<Particle> cloud2 = 
             eq2.withRotationalVel(Vector.Z_AXIS.add(Vector.Y_AXIS), (Double r) -> 8*Math.pow(r, -0.5))
-            .generate(1500,
+            .generate(3000,
                 new Particle()
                     .setAttributes(10, 2e12, Shape.SPHERE)
                     .setColor(Color.ORANGE, 0)
@@ -88,7 +88,7 @@ public class Main {
         eq3.setup();
         ArrayList<Particle> cloud3 = 
             eq3.withRotationalVel((Vector diff) -> diff.scale(0.01))
-            .generate(500,
+            .generate(3000,
                 new Particle()
                     .setAttributes(10, 2e14, Shape.SPHERE)
                     .setColor(Color.BLUE, 0)
@@ -98,8 +98,8 @@ public class Main {
         particles.add(sun);
         particles.add(planet);
         particles.addAll(cloud);
-        // particles.addAll(cloud2);
-        // particles.addAll(cloud3);
+        particles.addAll(cloud2);
+        particles.addAll(cloud3);
 
         Simulator simulator = new Simulator(particles, constants, environment);
         // simulator.disableGravity();
@@ -114,17 +114,17 @@ public class Main {
         renderer.init(frame);
         renderer.run();
 
-        Camera camera2 = new OrthographicProjector(new Vector(0, 0, 1000));
-        Renderer renderer2 = new Renderer(camera2, simulator, environment);
-        JFrame frame2 = new JFrame("Astrophys Renderer - Alternate Angle");
-        renderer2.init(frame2);
-        renderer2.run();
+        // Camera camera2 = new OrthographicProjector(new Vector(0, 0, 1000));
+        // Renderer renderer2 = new Renderer(camera2, simulator, environment);
+        // JFrame frame2 = new JFrame("Astrophys Renderer - Alternate Angle");
+        // renderer2.init(frame2);
+        // renderer2.run();
 
-        Camera camera3 = new RayTracer(new Vector(0, 0, 1000));
-        camera3.useLighting();
-        Renderer renderer3 = new Renderer(camera3, simulator, environment);
-        JFrame frame3 = new JFrame("Astrophys Renderer - Raytraced");
-        renderer3.init(frame3);
-        renderer3.run();
+        // Camera camera3 = new RayTracer(new Vector(0, 0, 1000));
+        // camera3.useLighting();
+        // Renderer renderer3 = new Renderer(camera3, simulator, environment);
+        // JFrame frame3 = new JFrame("Astrophys Renderer - Raytraced");
+        // renderer3.init(frame3);
+        // renderer3.run();
     }
 }

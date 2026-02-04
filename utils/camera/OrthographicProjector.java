@@ -17,16 +17,15 @@ public class OrthographicProjector extends Camera{
     }
 
     public void zoom(double ox, double oy, double ticks) {
-
         Vector up = new Vector(0, 1, 0);
         Vector right = normal.cross(up).normalize();
         up = right.cross(normal).normalize();
 
         Vector shiftVec = right.scale(ox).add(up.scale(oy)).scaleInPlace(Math.abs(ticks));
 
-        Vector origin = pos.add(shiftVec.scale(zoom)).add(normal.scale(zoom));
+        Vector origin = pos.add(shiftVec.add(normal).scale(zoom));
         zoom = Math.min(Math.max(zoom*Math.pow(1.05, ticks), 1e-8), 1e8);
-        pos = origin.subtract((normal.scale(zoom)).add((shiftVec).scale(zoom)));
+        pos = origin.subtract((normal.add(shiftVec).scale(zoom)));
     }
 
     public void scale(double ticks) { // scale the image by given mouse-ticks
@@ -36,33 +35,29 @@ public class OrthographicProjector extends Camera{
     public void focus(double ticks){}
 
     public void shift(double dx, double dy) { // pan by given x,y on-screen/relative to screen
-        dx*=zoom/scale; dy*=zoom/scale;
-
         Vector up = new Vector(0, 1, 0);
         Vector right = normal.cross(up).normalize();
         up = right.cross(normal).normalize();
 
-        Vector shiftVec = right.scale(dx).add(up.scale(dy));
+        Vector shiftVec = right.scale(dx).add(up.scale(dy)).scale(zoom/scale);
 
         pos = pos.add(shiftVec);
     }
 
     @Override
     public void jump(double ox, double oy) {
-        ox *= zoom/scale; oy *= zoom/scale;
-
         Vector up = new Vector(0, 1, 0);
-        Vector right = normal.cross(up).normalize();
+        Vector right = normal.cross(up).normalizeInPlace();
         up = right.cross(normal).normalize();
 
-        Vector shiftVec = right.scale(ox).addInPlace(up.scale(oy));
+        Vector shiftVec = right.scale(ox).addInPlace(up.scale(oy)).scale(zoom/scale);
 
         pos.addInPlace(shiftVec);
     }
 
     public void orbit(double dx, double dy) { // rotate by given x,y on-screen/relative to screen
         Vector up = new Vector(0, 1, 0);
-        Vector right = normal.cross(up).normalize();
+        Vector right = normal.cross(up).normalizeInPlace();
         
         if(1-Math.pow(normal.dot(up),2) < Math.pow(dy, 2)) {
             dy*=Math.max(0, -Math.signum(normal.dot(up)*dy));
@@ -86,10 +81,9 @@ public class OrthographicProjector extends Camera{
 
         for (Particle p : particles) {
             Vector rel = p.pos.subtract(pos);
-            
+
             double x = rel.dot(right), y = rel.dot(up), r = p.rad;
 
-            // if(r/zoom > environment.RESOLUTION * environment.ASPECT_RATIO) continue;
             x /= zoom;
             y /= zoom;
             r /= zoom;

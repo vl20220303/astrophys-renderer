@@ -31,25 +31,22 @@ public class PerspectiveProjector extends Camera{
         Vector shiftVec = right.scale(ox).add(up.scale(oy)).scaleInPlace(Math.abs(ticks));
 
         Vector origin = pos.add(shiftVec.scale(zoom)).add(normal.scale(zoom));
-        zoom = Math.max(zoom*Math.pow(1.05, ticks), 0.00000001);
+        zoom = Math.min(Math.max(zoom*Math.pow(1.05, ticks), 1e-8), 1e8);
         pos = origin.subtract((normal.scale(zoom)).add((shiftVec).scale(zoom)));
     }
 
     public void scale(double ticks) { // scale the image by given mouse-ticks
-        scale = Math.max(scale+ticks, 0.00000001);
+        scale = Math.min(Math.max(scale+ticks, 1e-8), 1e8);
     }
 
     public void focus(double ticks){}
 
     public void shift(double dx, double dy) { // pan by given x,y on-screen/relative to screen
-        dx *= zoom/CONSTANT_SCALING/scale * 2;
-        dy *= zoom/CONSTANT_SCALING/scale * 2;
-
         Vector up = new Vector(0, 1, 0);
         Vector right = normal.cross(up).normalize();
         up = right.cross(normal).normalize();
 
-        Vector shiftVec = right.scale(dx).addInPlace(up.scale(dy));
+        Vector shiftVec = right.scale(dx).addInPlace(up.scale(dy)).scale(zoom/scale/CONSTANT_SCALING);
 
         pos.addInPlace(shiftVec);
     }
@@ -57,13 +54,11 @@ public class PerspectiveProjector extends Camera{
     
     @Override
     public void jump(double dx, double dy) {
-        dx *= zoom/scale/CONSTANT_SCALING; dy *= zoom/scale/CONSTANT_SCALING;
-
         Vector up = new Vector(0, 1, 0);
         Vector right = normal.cross(up).normalize();
         up = right.cross(normal).normalize();
 
-        Vector shiftVec = right.scale(dx).addInPlace(up.scale(dy));
+        Vector shiftVec = right.scale(dx).addInPlace(up.scale(dy)).scale(zoom/scale/CONSTANT_SCALING);
 
         pos.addInPlace(shiftVec);
     }
@@ -85,7 +80,7 @@ public class PerspectiveProjector extends Camera{
         particles.sort((a, b) -> {
             double da = a.pos.subtract(pos).dot(normal);
             double db = b.pos.subtract(pos).dot(normal);
-            return Double.compare(db-((b.rad*b.rad)/db), da-((a.rad*a.rad)/da));
+            return Double.compare(db * (1-Math.pow(b.rad/db, 2)), da * (1-Math.pow(a.rad/da, 2)));
         });
 
         Vector up = new Vector(0, 1, 0);
@@ -102,8 +97,8 @@ public class PerspectiveProjector extends Camera{
             if (depth > 0) {
                 x /= (depth);
                 y /= (depth);
-                r = Math.min(Math.sqrt(r*r - (r*r*r*r)/(depth*depth))/((depth - (r*r)/depth)), 100000);
-            } else if(depth==0){
+                r = Math.min(r/Math.sqrt(depth*depth - r*r), 1e8);
+            } else if(depth<1e-8){
                 r = CONSTANT_SCALING*CONSTANT_SCALING;
             } else{
                 r = 0;
