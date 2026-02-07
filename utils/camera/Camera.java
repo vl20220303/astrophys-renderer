@@ -15,15 +15,15 @@ public abstract class Camera {
     public Vector normal, pos;
     public double zoom = 1, scale = 1;
 
-    public boolean renderLighting, renderGlow;
+    public boolean useLighting, useGlow;
 
     public Camera(Vector pos, Vector normal){
         this.pos = pos; this.normal = normal.normalize();
         this.zoom = normal.abs();
     }
 
-    public void useLighting(){ this.renderLighting = true; }
-    public void useGlow(){ this.renderGlow = true; }
+    public void useLighting(){ this.useLighting = true; }
+    public void useGlow(){ this.useGlow = true; }
 
     public void setEnvironment(Environment environment){ this.environment = environment; }
 

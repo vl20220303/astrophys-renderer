@@ -2,8 +2,12 @@ package utils.camera;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 
+import utils.utils.BigColor;
+import utils.utils.ColorLayer;
 import utils.utils.Particle;
 import utils.utils.Vector;
 
@@ -34,7 +38,7 @@ public class RayTracer extends Camera{
 
     @Override
     public void focus(double ticks){
-        focalLength = Math.min(Math.max(focalLength*(1+ticks), 1e-8), 1e8);
+        focalLength = Math.min(Math.max(focalLength*(1-ticks), 1e-8), 1e8);
     }
 
     @Override
@@ -79,8 +83,6 @@ public class RayTracer extends Camera{
         Vector right = normal.cross(up).normalize();
         up = right.cross(normal).normalize();
 
-        
-
         Vector focus = normal.scale(-focalLength);
         for(int i = (int) (-environment.RESOLUTION * environment.ASPECT_RATIO/2); i<environment.RESOLUTION * environment.ASPECT_RATIO/2; i+=pixelWidth){
             for(int j = (int) (-environment.RESOLUTION/2); j<environment.RESOLUTION/2; j+=pixelHeight){
@@ -92,30 +94,70 @@ public class RayTracer extends Camera{
     }
 
     private Color getColor(Vector focus, Vector pixel, ArrayList<Particle> particles){
-        Color color = environment.BACKGROUND_COLOR;
-        int reflections = 2;
-
         Vector origin = pixel;
         Vector ray = pixel.subtract(focus);
-        for(int i = 0; i<reflections; i++){
-            Object[] intersection = getIntersection(origin, ray, particles);
-            Particle particle = (Particle) intersection[0];
-            Vector newOrigin = (Vector) intersection[1];
+
+        int reflections = 0, maxReflections = !useLighting ? 1 : 20;
+        Deque<ColorLayer> layers = new ArrayDeque<ColorLayer>();
+        while(reflections<maxReflections){
+            Intersection intersection = getIntersection(origin, ray, particles);
+            Particle particle = intersection.intersectParticle;
+            Vector newOrigin = intersection.intersectPoint;
+            double dist = intersection.intersectDist;
 
             if(particle==null){ break; }
 
-            color = particle.color;
+            if(!useLighting){
+                return particle.color;
+            }
+
+            if(particle.intensity == 0){
+                if(layers.size()>0 && layers.peek().operation == ColorLayer.opType.MULTIPLY){
+                    layers.peek().compress(particle.color, dist);
+                } else{
+                    layers.push(new ColorLayer(particle.color, dist));
+                }
+            } else{
+                layers.push(new ColorLayer(particle.color, dist, particle.intensity));
+                layers.push(new ColorLayer(particle.color, dist));
+            }
 
             Vector incoming1 = ray.scale(-1).normalize();
-            Vector incoming2 = newOrigin.subtract(origin).scale(-1).normalize();
             Vector normal = particle.pos.subtract(newOrigin).normalize();
             ray = incoming1.add(normal.scale(2*incoming1.dot(normal))).normalize();
             origin = newOrigin;
+
+            reflections++;
         }
-        return color;
+
+        BigColor color = new BigColor(environment.BACKGROUND_COLOR);
+        color.scale(1e100);
+
+        while(layers.size()>0){
+            ColorLayer layer = layers.pop();
+            if(layer.operation == ColorLayer.opType.ADD){
+                color.add(layer.color, layer.intensity);
+                color.scale(layer.dropoff);
+            } else{
+                color.multiply(layer.color, layer.dropoff);
+            }
+        }
+        return color.normalize();
+    }
+
+    private class Intersection{
+        Particle intersectParticle;
+        Vector   intersectPoint;
+        double   intersectDist;
+        Intersection(Particle p, Vector v, double d){
+            this.intersectParticle = p;
+            this.intersectPoint = v;
+            this.intersectDist = d;
+        }
     }
     
-    private Object[] getIntersection(Vector rayOrigin, Vector rayVec, ArrayList<Particle> particles){
+    private Intersection getIntersection(Vector rayOrigin, Vector rayVec, ArrayList<Particle> particles){
+        rayVec.normalizeInPlace();
         Particle intersectParticle = null;
         double intersectDist = Double.POSITIVE_INFINITY;
         for(Particle p : particles){
@@ -129,18 +171,19 @@ public class RayTracer extends Camera{
 
             if(discriminant < 0) continue;
             double dist = (-b - Math.sqrt(discriminant))/(2*a);
-            if(dist<0) dist = -dist - b/a;
+            if(dist < 1e-9) dist = -dist - b/a;
 
             if(dist < 1e-9 || dist > intersectDist) continue;
             intersectParticle = p; intersectDist = dist;
         }
         Vector intersectVec = rayOrigin.add(rayVec.scale(intersectDist));
-        return new Object[]{intersectParticle, intersectVec};
+        return new Intersection(intersectParticle, intersectVec, intersectDist);
     }
 
     @Override
     protected Point[] projectLineToScreen(Vector p, Vector q) {
-        return null;
+        throw new Error("Unimplemented method projectLineToScreen");
+        // return null;
     }
 
 }

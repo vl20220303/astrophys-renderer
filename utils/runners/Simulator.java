@@ -1,5 +1,7 @@
 package utils.runners;
+import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import utils.settings.Constants;
 import utils.settings.Environment;
@@ -27,6 +29,7 @@ public class Simulator implements Runnable {
     public ArrayList<Particle> getParticles() {
         synchronized (lock) {
             return new ArrayList<>(particles); // Return a copy to avoid concurrent modification
+            // return particles;                  // Unsafe, but slightly faster (200ms avg diff @ n=3000)
         }
     }
 

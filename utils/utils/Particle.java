@@ -19,7 +19,7 @@ public class Particle{
     }
 
     public Color color = Color.BLACK;
-    public double luminosity = 0;
+    public double intensity = 0;
     public double reflectivity = 0;
     public double diffusion = 0;
 
@@ -55,7 +55,7 @@ public class Particle{
         this.shape = p.shape; 
 
         this.color = p.color;
-        this.luminosity = p.luminosity;
+        this.intensity = p.intensity;
 
         this.fixed = p.fixed; 
         this.collideType = p.collideType;
@@ -78,7 +78,7 @@ public class Particle{
     //* Set Color & Luminosity */
     public Particle setColor(Color color, double luminosity){
         this.color = color;
-        this.luminosity = luminosity;
+        this.intensity = luminosity;
         return this;
     }
     //* Fix particle in place */

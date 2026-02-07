@@ -113,7 +113,7 @@ public class PerspectiveProjector extends Camera{
             double d = 2*r;
             
             if(p.shape==Shape.SPHERE){
-                if(p.luminosity>0 && renderGlow){
+                if(p.intensity>0 && useGlow){
                     RadialGradientPaint rgp = new RadialGradientPaint(new Point2D.Double(x,y), (float) r*2, new float[]{.5f, 1f}, new Color[]{p.color.brighter(), new Color(0,0,0,0)});
                     g.setPaint(rgp);
                     g.fillOval((int) (x-2*r), (int) (y-2*r), (int) (2*d), (int) (2*d));

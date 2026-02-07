@@ -32,7 +32,7 @@ public class Main {
                                         .enableViewIndicator()
                                         .enableZoomIndicator()
                                         .enableFocusIndicator()
-                                        // .setBackgroundColor(Color.BLACK)
+                                        .setBackgroundColor(Color.BLACK)
                                         .build();
 
         
@@ -41,11 +41,12 @@ public class Main {
 
         Particle sun = new Particle()
                             .setAttributes(300, 1.98e16, Shape.SPHERE)
+                            .setColor(Color.ORANGE, 1e12)
                             .fixed();
         Particle planet = new Particle()
-                                .setPos(new Vector(500, 0, 0))
+                                .setPos(new Vector(1000, 0, 0))
                                 .setAttributes(100, 3.29e2, Shape.SPHERE)
-                                .setColor(Color.RED, 10)
+                                .setColor(Color.RED, 0)
                                 .fixed();
 
         // Example: add some particles
@@ -64,7 +65,7 @@ public class Main {
         eq.setup();
         ArrayList<Particle> cloud = 
             eq.withRotationalVel(Vector.Z_AXIS.add(Vector.Y_AXIS), (Double r) -> 8*Math.pow(r, -0.5))
-            .generate(3000,
+            .generate(3,
                     new Particle()
                         .setAttributes(15, 2e12, Shape.SPHERE)
                         .setColor(Color.GREEN, 0)
@@ -76,7 +77,7 @@ public class Main {
         eq2.setup();
         ArrayList<Particle> cloud2 = 
             eq2.withRotationalVel(Vector.Z_AXIS.add(Vector.Y_AXIS), (Double r) -> 8*Math.pow(r, -0.5))
-            .generate(3000,
+            .generate(2500,
                 new Particle()
                     .setAttributes(10, 2e12, Shape.SPHERE)
                     .setColor(Color.ORANGE, 0)
@@ -88,7 +89,7 @@ public class Main {
         eq3.setup();
         ArrayList<Particle> cloud3 = 
             eq3.withRotationalVel((Vector diff) -> diff.scale(0.01))
-            .generate(3000,
+            .generate(2500,
                 new Particle()
                     .setAttributes(10, 2e14, Shape.SPHERE)
                     .setColor(Color.BLUE, 0)
@@ -98,11 +99,10 @@ public class Main {
         particles.add(sun);
         particles.add(planet);
         particles.addAll(cloud);
-        particles.addAll(cloud2);
-        particles.addAll(cloud3);
+        // particles.addAll(cloud2);
+        // particles.addAll(cloud3);
 
         Simulator simulator = new Simulator(particles, constants, environment);
-        // simulator.disableGravity();
 
         Thread simulatorThread = new Thread(simulator);
         simulatorThread.start();
@@ -120,11 +120,17 @@ public class Main {
         // renderer2.init(frame2);
         // renderer2.run();
 
-        // Camera camera3 = new RayTracer(new Vector(0, 0, 1000));
-        // camera3.useLighting();
-        // Renderer renderer3 = new Renderer(camera3, simulator, environment);
-        // JFrame frame3 = new JFrame("Astrophys Renderer - Raytraced");
-        // renderer3.init(frame3);
-        // renderer3.run();
+        Camera camera3 = new RayTracer(new Vector(0, 0, 1000));
+        Renderer renderer3 = new Renderer(camera3, simulator, environment);
+        JFrame frame3 = new JFrame("Astrophys Renderer - Raytraced");
+        renderer3.init(frame3);
+        renderer3.run();
+
+        Camera camera4 = new RayTracer(new Vector(0, 0, 1000));
+        camera4.useLighting();
+        Renderer renderer4 = new Renderer(camera4, simulator, environment);
+        JFrame frame4 = new JFrame("Astrophys Renderer - Raytraced with Lighting");
+        renderer4.init(frame4);
+        renderer4.run();
     }
 }
