@@ -49,23 +49,12 @@ public class Main {
                                 .setColor(Color.RED, 0)
                                 .fixed();
 
-        // Example: add some particles
-        // particles.add(new Particle(new Vector(0,0, 0), 300, 1.98e16, "circle", new Vector(0,0,0), Color.BLACK, true,"none"));
-        // particles.add(new Particle(new Vector(500, 0, 0), 100, 3.29e2, "circle", new Vector(5,0,0), Color.RED, true, "none"));
-        // particles.add(new Particle(new Vector(0, 900, 0), 100, 3.29e1, "circle", new Vector(0,0,0), Color.BLUE, true, "none"));
-        // particles.add(new Particle(new Vector(0, 120, 450), 80, 3.29e3, "circle", new Vector(0,0,0), Color.BLUE, true, "none"));
-        // particles.add(new Particle(new Vector(300, 0, 500), 120, 3.29e-5, "circle", new Vector(10,0,0), Color.GREEN, true, "none"));
-        // particles.add(new Particle(new Vector(380, 0, 500), 40, 3.29e-2, "circle", new Vector(9,1,0), Color.GRAY, true, "none"));
-        
-        // particles.add(new Particle(new Vector(0,0, 0), 300, 1.98e16, "circle", new Vector(0,0,0), Color.BLACK, true,"none"));
-        // particles.add(new Particle(new Vector(-300,0, 0), 300, 5.98e16, "circle", new Vector(0,-10,0), Color.BLACK, false,"none"));
-
         Sphere eq = new Sphere(new Vector(0, 0, 0), 500, 800, (Double r) -> Math.pow(r-499, -1)+1e-4);
         eq.setResolution(1);
         eq.setup();
         ArrayList<Particle> cloud = 
             eq.withRotationalVel(Vector.Z_AXIS.add(Vector.Y_AXIS), (Double r) -> 8*Math.pow(r, -0.5))
-            .generate(3,
+            .generate(500,
                     new Particle()
                         .setAttributes(15, 2e12, Shape.SPHERE)
                         .setColor(Color.GREEN, 0)
@@ -108,7 +97,7 @@ public class Main {
         simulatorThread.start();
 
         Camera camera = new PerspectiveProjector(new Vector(0, 0, 1000));
-        // camera.useGlow();
+        camera.useGlow();
         Renderer renderer = new Renderer(camera, simulator, environment);
         JFrame frame = new JFrame("Astrophys Renderer");
         renderer.init(frame);

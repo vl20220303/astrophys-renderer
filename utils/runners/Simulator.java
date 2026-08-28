@@ -29,7 +29,7 @@ public class Simulator implements Runnable {
     public ArrayList<Particle> getParticles() {
         synchronized (lock) {
             return new ArrayList<>(particles); // Return a copy to avoid concurrent modification
-            // return particles;                  // Unsafe, but slightly faster (200ms avg diff @ n=3000)
+            // return particles;               // Unsafe, but slightly faster (200ms avg diff @ n=3000)
         }
     }
 
