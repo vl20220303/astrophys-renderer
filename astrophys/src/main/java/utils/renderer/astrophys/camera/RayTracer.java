@@ -16,6 +16,8 @@ import utils.renderer.astrophys.utils.ColorLayer;
 import utils.renderer.astrophys.utils.Particle;
 import utils.renderer.astrophys.utils.Vector;
 import jdk.incubator.vector.DoubleVector;
+import jdk.incubator.vector.VectorMask;
+import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorSpecies;
 
 public class RayTracer extends Camera{
@@ -195,30 +197,78 @@ public class RayTracer extends Camera{
     private Intersection getIntersection(Vector rayOrigin, Vector rayVec, ArrayList<Particle> particles){
         rayVec.normalizeInPlace();
         Particle intersectParticle = null;
+        int intersectIdx = -1;
         double intersectDist = Double.POSITIVE_INFINITY;
 
-        // Preparing particles for SIMD
+        // Preparing particles for SIMD (all vectors use Upper-lowercase naming convention.)
         double[] px = new double[particles.size()];
         double[] py = new double[particles.size()];
         double[] pz = new double[particles.size()];
         double[] rad = new double[particles.size()];
-
-        for(Particle p : particles){
-            Vector diff = rayOrigin.subtract(p.pos);
-
-            double a = rayVec.dot(rayVec);
-            double b = 2*diff.dot(rayVec);
-            double c = diff.dot(diff) - p.rad*p.rad;
-
-            double discriminant = b*b - 4*a*c;
-
-            if(discriminant < 0) continue;
-            double dist = (-b - Math.sqrt(discriminant))/(2*a);
-            if(dist < 1e-9) dist = -dist - b/a;
-
-            if(dist < 1e-9 || dist > intersectDist) continue;
-            intersectParticle = p; intersectDist = dist;
+        for(int i = 0; i<particles.size(); i++){
+            Particle p = particles.get(i);
+            px[i] = p.pos.x; py[i] = p.pos.y; pz[i] = p.pos.z; rad[i] = p.rad;
         }
+        
+        DoubleVector Ox = DoubleVector.broadcast(SPECIES, rayOrigin.x);
+        DoubleVector Oy = DoubleVector.broadcast(SPECIES, rayOrigin.y);
+        DoubleVector Oz = DoubleVector.broadcast(SPECIES, rayOrigin.z);
+
+        DoubleVector Rx = DoubleVector.broadcast(SPECIES, rayVec.x);
+        DoubleVector Ry = DoubleVector.broadcast(SPECIES, rayVec.y);
+        DoubleVector Rz = DoubleVector.broadcast(SPECIES, rayVec.z);
+
+        DoubleVector A = DoubleVector.broadcast(SPECIES, rayVec.dot(rayVec));
+
+        for(int i = 0; i<particles.size(); i+=SPECIES.length()){
+            var mask = SPECIES.indexInRange(i, particles.size());
+
+            DoubleVector Px = DoubleVector.fromArray(SPECIES, px, i, mask);
+            DoubleVector Py = DoubleVector.fromArray(SPECIES, py, i, mask);
+            DoubleVector Pz = DoubleVector.fromArray(SPECIES, pz, i, mask);
+            DoubleVector Rad = DoubleVector.fromArray(SPECIES, rad, i, mask);
+
+            DoubleVector Dx = Ox.sub(Px), Dy = Oy.sub(Py), Dz = Oz.sub(Pz);
+            DoubleVector B = Dx.mul(Rx).add(Dy.mul(Ry)).add(Dz.mul(Rz)).mul(2);
+            DoubleVector C = Dx.mul(Dx).add(Dy.mul(Dy)).add(Dz.mul(Dz)).sub(Rad.mul(Rad));
+
+            DoubleVector Disc = B.mul(B).sub(A.mul(C).mul(4));
+            
+            var PositiveDiscMask = Disc.compare(VectorOperators.GT, 0);
+            if(!PositiveDiscMask.anyTrue()) continue;
+
+            DoubleVector Dist = B.add(Disc.lanewise(VectorOperators.SQRT, PositiveDiscMask)).mul(-1).div(A.mul(2));
+            DoubleVector AltDist = Dist.add(B.div(A)).mul(-1);
+
+            var SmallDistMask = Dist.compare(VectorOperators.LT, 1e-9);
+            Dist = Dist.blend(AltDist, SmallDistMask);
+
+            var ValidMask = Dist.compare(VectorOperators.GT, 1e-9);
+
+            double min = Dist.reduceLanes(VectorOperators.MIN, ValidMask);
+            var MinMask = Dist.compare(VectorOperators.EQ, min);
+            int lane = MinMask.firstTrue();
+
+            if(min < intersectDist){
+                intersectDist = min; intersectIdx = i+lane;
+            }
+        }
+
+        // for(Particle p : particles){
+        //     Vector diff = rayOrigin.subtract(p.pos);
+        //     double b = 2*diff.dot(rayVec);
+        //     double c = diff.dot(diff) - p.rad*p.rad;
+
+        //     double discriminant = b*b - 4*a*c;
+
+        //     if(discriminant < 0) continue;
+        //     double dist = (-b - Math.sqrt(discriminant))/(2*a);
+        //     if(dist < 1e-9) dist = -dist - b/a;
+
+        //     if(dist < 1e-9 || dist > intersectDist) continue;
+        //     intersectParticle = p; intersectDist = dist;
+        // }
+        intersectParticle = intersectIdx > -1 ? particles.get(intersectIdx) : null;
         Vector intersectVec = rayOrigin.add(rayVec.scale(intersectDist));
         return new Intersection(intersectParticle, intersectVec, intersectDist);
     }
