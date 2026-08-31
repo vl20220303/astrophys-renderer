@@ -197,12 +197,6 @@ public class RayTracer extends Camera{
         Particle intersectParticle = null;
         double intersectDist = Double.POSITIVE_INFINITY;
 
-        // Preparing particles for SIMD
-        double[] px = new double[particles.size()];
-        double[] py = new double[particles.size()];
-        double[] pz = new double[particles.size()];
-        double[] rad = new double[particles.size()];
-
         for(Particle p : particles){
             Vector diff = rayOrigin.subtract(p.pos);
 

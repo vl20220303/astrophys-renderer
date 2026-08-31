@@ -55,7 +55,7 @@ public class Main {
         eq.setup();
         ArrayList<Particle> cloud = 
             eq.withRotationalVel(Vector.Z_AXIS.add(Vector.Y_AXIS), (Double r) -> 8*Math.pow(r, -0.5))
-            .generate(1000,
+            .generate(500,
                     new Particle()
                         .setAttributes(15, 2e12, Shape.SPHERE)
                         .setColor(Color.GREEN, 0)
