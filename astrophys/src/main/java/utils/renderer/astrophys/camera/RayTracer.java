@@ -16,8 +16,6 @@ import utils.renderer.astrophys.utils.ColorLayer;
 import utils.renderer.astrophys.utils.Particle;
 import utils.renderer.astrophys.utils.Vector;
 import jdk.incubator.vector.DoubleVector;
-import jdk.incubator.vector.VectorMask;
-import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorSpecies;
 
 public class RayTracer extends Camera{
@@ -99,18 +97,13 @@ public class RayTracer extends Camera{
         int height = (int) (environment.RESOLUTION), width = (int) (height * environment.ASPECT_RATIO);
         Color[][] buf = new Color[width][height];
 
-        final int WIDTH_PIXELS = (int) (width/pixelWidth), HEIGHT_PIXELS = (int) (height/pixelHeight);
-        final int TOTAL_PIXELS =  WIDTH_PIXELS * HEIGHT_PIXELS;
-        final int BATCH_SIZE = 180;
-
-        List<Future<?>> futures = new ArrayList<>((int) (TOTAL_PIXELS/BATCH_SIZE) + 1);
-        for(int i = 0; i<TOTAL_PIXELS; i+=BATCH_SIZE){
+        List<Future<?>> futures = new ArrayList<>((int) (width / pixelWidth) + 1);
+        for(int i = -width/2; i<width/2; i+=pixelWidth){
             final int ii = i;
             futures.add(executor.submit(() -> {
-                for(int j = ii; j<ii+BATCH_SIZE && j<TOTAL_PIXELS; j++){
-                    int w = j%WIDTH_PIXELS * pixelWidth - width/2, h = j/WIDTH_PIXELS * pixelHeight - height/2;
-                    Vector pixel = pos.add(right.scale(w+pixelWidth/2).addInPlace(up.scale(h+pixelHeight/2)).scaleInPlace(1/scale));
-                    buf[w+width/2][h+height/2] = getColor(focus, pixel, particles);
+                for(int j = -height/2; j<height/2; j+=pixelHeight){
+                    Vector pixel = pos.add(right.scale(ii+pixelWidth/2).addInPlace(up.scale(j+pixelHeight/2)).scaleInPlace(1/scale));
+                    buf[ii+width/2][j+height/2] = getColor(focus, pixel, particles);
                 }
             }));
         }
@@ -200,7 +193,7 @@ public class RayTracer extends Camera{
     private static final VectorSpecies<Double> SPECIES = DoubleVector.SPECIES_PREFERRED;
 
     private Intersection getIntersection(Vector rayOrigin, Vector rayVec, ArrayList<Particle> particles){
-                rayVec.normalizeInPlace();
+        rayVec.normalizeInPlace();
         Particle intersectParticle = null;
         double intersectDist = Double.POSITIVE_INFINITY;
 
