@@ -99,15 +99,6 @@ public class RayTracer extends Camera{
         int height = (int) (environment.RESOLUTION), width = (int) (height * environment.ASPECT_RATIO);
         Color[][] buf = new Color[width][height];
 
-        double[] px = new double[particles.size()];
-        double[] py = new double[particles.size()];
-        double[] pz = new double[particles.size()];
-        double[] rad = new double[particles.size()];
-        for(int i = 0; i<particles.size(); i++){
-            Particle p = particles.get(i);
-            px[i] = p.pos.x; py[i] = p.pos.y; pz[i] = p.pos.z; rad[i] = p.rad;
-        }
-
         final int WIDTH_PIXELS = (int) (width/pixelWidth), HEIGHT_PIXELS = (int) (height/pixelHeight);
         final int TOTAL_PIXELS =  WIDTH_PIXELS * HEIGHT_PIXELS;
         final int BATCH_SIZE = 180;
@@ -119,7 +110,7 @@ public class RayTracer extends Camera{
                 for(int j = ii; j<ii+BATCH_SIZE && j<TOTAL_PIXELS; j++){
                     int w = j%WIDTH_PIXELS * pixelWidth - width/2, h = j/WIDTH_PIXELS * pixelHeight - height/2;
                     Vector pixel = pos.add(right.scale(w+pixelWidth/2).addInPlace(up.scale(h+pixelHeight/2)).scaleInPlace(1/scale));
-                    buf[w+width/2][h+height/2] = getColor(focus, pixel, particles, px, py, pz, rad);
+                    buf[w+width/2][h+height/2] = getColor(focus, pixel, particles);
                 }
             }));
         }
@@ -143,14 +134,14 @@ public class RayTracer extends Camera{
         }
     }
 
-    private Color getColor(Vector focus, Vector pixel, ArrayList<Particle> particles, double[] px, double[] py, double[] pz, double[] rad){
+    private Color getColor(Vector focus, Vector pixel, ArrayList<Particle> particles){
         Vector origin = pixel;
         Vector ray = pixel.subtract(focus);
 
         int reflections = 0, maxReflections = !useLighting ? 1 : 30;
         Deque<ColorLayer> layers = new ArrayDeque<ColorLayer>();
         while(reflections<maxReflections){
-            Intersection intersection = getIntersection(origin, ray, particles, px, py, pz, rad);
+            Intersection intersection = getIntersection(origin, ray, particles);
             Particle particle = intersection.intersectParticle;
             Vector newOrigin = intersection.intersectPoint;
             double dist = intersection.intersectDist;
@@ -208,58 +199,27 @@ public class RayTracer extends Camera{
     
     private static final VectorSpecies<Double> SPECIES = DoubleVector.SPECIES_PREFERRED;
 
-    private Intersection getIntersection(Vector rayOrigin, Vector rayVec, ArrayList<Particle> particles, double[] px, double[] py, double[] pz, double[] rad){
-        rayVec.normalizeInPlace();
+    private Intersection getIntersection(Vector rayOrigin, Vector rayVec, ArrayList<Particle> particles){
+                rayVec.normalizeInPlace();
         Particle intersectParticle = null;
-        int intersectIdx = -1;
         double intersectDist = Double.POSITIVE_INFINITY;
 
-        // Preparing particles for SIMD (all vectors use Upper-lowercase naming convention.)
-        DoubleVector Ox = DoubleVector.broadcast(SPECIES, rayOrigin.x);
-        DoubleVector Oy = DoubleVector.broadcast(SPECIES, rayOrigin.y);
-        DoubleVector Oz = DoubleVector.broadcast(SPECIES, rayOrigin.z);
+        for(Particle p : particles){
+            Vector diff = rayOrigin.subtract(p.pos);
 
-        DoubleVector Rx = DoubleVector.broadcast(SPECIES, rayVec.x);
-        DoubleVector Ry = DoubleVector.broadcast(SPECIES, rayVec.y);
-        DoubleVector Rz = DoubleVector.broadcast(SPECIES, rayVec.z);
+            double a = rayVec.dot(rayVec);
+            double b = 2*diff.dot(rayVec);
+            double c = diff.dot(diff) - p.rad*p.rad;
 
-        DoubleVector A = DoubleVector.broadcast(SPECIES, rayVec.dot(rayVec));
+            double discriminant = b*b - 4*a*c;
 
-        for(int i = 0; i<particles.size(); i+=SPECIES.length()){
-            var mask = SPECIES.indexInRange(i, particles.size());
+            if(discriminant < 0) continue;
+            double dist = (-b - Math.sqrt(discriminant))/(2*a);
+            if(dist < 1e-9) dist = -dist - b/a;
 
-            DoubleVector Px = DoubleVector.fromArray(SPECIES, px, i, mask);
-            DoubleVector Py = DoubleVector.fromArray(SPECIES, py, i, mask);
-            DoubleVector Pz = DoubleVector.fromArray(SPECIES, pz, i, mask);
-            DoubleVector Rad = DoubleVector.fromArray(SPECIES, rad, i, mask);
-
-            DoubleVector Dx = Ox.sub(Px), Dy = Oy.sub(Py), Dz = Oz.sub(Pz);
-            DoubleVector B = Dx.fma(Rx, Dy.fma(Ry, Dz.mul(Rz))).mul(2);
-            DoubleVector C = Dx.fma(Dx, Dy.fma(Dy, Dz.mul(Dz))).sub(Rad.mul(Rad));
-
-            DoubleVector Disc = B.mul(B).sub(A.mul(C).mul(4));
-            
-            var PositiveDiscMask = Disc.compare(VectorOperators.GT, 0);
-            if(!PositiveDiscMask.anyTrue()) continue;
-
-            DoubleVector Dist = B.add(Disc.lanewise(VectorOperators.SQRT, PositiveDiscMask)).mul(-1).div(A.mul(2));
-            DoubleVector AltDist = Dist.add(B.div(A)).mul(-1);
-
-            var SmallDistMask = Dist.compare(VectorOperators.LT, 1e-9);
-            Dist = Dist.blend(AltDist, SmallDistMask);
-
-            var ValidMask = Dist.compare(VectorOperators.GT, 1e-9).and(mask);
-
-            double min = Dist.reduceLanes(VectorOperators.MIN, ValidMask);
-            var MinMask = Dist.compare(VectorOperators.EQ, min);
-            int lane = MinMask.firstTrue();
-
-            if(min < intersectDist){
-                intersectDist = min; intersectIdx = i+lane;
-            }
+            if(dist < 1e-9 || dist > intersectDist) continue;
+            intersectParticle = p; intersectDist = dist;
         }
-
-        intersectParticle = intersectIdx > -1 ? particles.get(intersectIdx) : null;
         Vector intersectVec = rayOrigin.add(rayVec.scale(intersectDist));
         return new Intersection(intersectParticle, intersectVec, intersectDist);
     }
