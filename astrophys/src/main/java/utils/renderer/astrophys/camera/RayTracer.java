@@ -243,7 +243,7 @@ public class RayTracer extends Camera{
             var SmallDistMask = Dist.compare(VectorOperators.LT, 1e-9);
             Dist = Dist.blend(AltDist, SmallDistMask);
 
-            var ValidMask = Dist.compare(VectorOperators.GT, 1e-9);
+            var ValidMask = Dist.compare(VectorOperators.GT, 1e-9).and(mask);
 
             double min = Dist.reduceLanes(VectorOperators.MIN, ValidMask);
             var MinMask = Dist.compare(VectorOperators.EQ, min);
