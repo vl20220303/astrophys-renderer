@@ -55,7 +55,7 @@ public class Main {
         eq.setup();
         ArrayList<Particle> cloud = 
             eq.withRotationalVel(Vector.Z_AXIS.add(Vector.Y_AXIS), (Double r) -> 8*Math.pow(r, -0.5))
-            .generate(1000,
+            .generate(500,
                     new Particle()
                         .setAttributes(15, 2e12, Shape.SPHERE)
                         .setColor(Color.GREEN, 0)
@@ -67,10 +67,10 @@ public class Main {
         eq2.setup();
         ArrayList<Particle> cloud2 = 
             eq2.withRotationalVel(Vector.Z_AXIS.add(Vector.Y_AXIS), (Double r) -> 8*Math.pow(r, -0.5))
-            .generate(2500,
+            .generate(100,
                 new Particle()
                     .setAttributes(10, 2e12, Shape.SPHERE)
-                    .setColor(Color.ORANGE, 0)
+                    .setColor(Color.YELLOW, 0)
                     .fixed()
                     .setBehavior(Behavior.NONE));
 
@@ -79,7 +79,7 @@ public class Main {
         eq3.setup();
         ArrayList<Particle> cloud3 = 
             eq3.withRotationalVel((Vector diff) -> diff.scale(0.01))
-            .generate(2500,
+            .generate(10,
                 new Particle()
                     .setAttributes(10, 2e14, Shape.SPHERE)
                     .setColor(Color.BLUE, 0)
