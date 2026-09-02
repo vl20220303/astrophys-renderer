@@ -244,12 +244,15 @@ public class RayTracer extends Camera{
 
         int reflections = 0, maxReflections = !useLighting ? 1 : 30;
         Deque<ColorLayer> layers = new ArrayDeque<ColorLayer>();
+
+        Intersection intersection; Particle particle;
+        Vector newOrigin, incoming1, normal;
+
         while(reflections<maxReflections){
-            Intersection intersection = new Intersection(null, null, Double.POSITIVE_INFINITY);
-            // Intersection intersection = getIntersection(origin, ray, particles, indices, node, intersection);
+            intersection = new Intersection(null, null, Double.POSITIVE_INFINITY);
             getIntersection(origin, ray, particles, indices, node, intersection);
-            Particle particle = intersection.intersectParticle;
-            Vector newOrigin = intersection.intersectPoint;
+            particle = intersection.intersectParticle;
+            newOrigin = intersection.intersectPoint;
             double dist = intersection.intersectDist;
 
             if(particle==null){ break; }
@@ -269,8 +272,8 @@ public class RayTracer extends Camera{
                 layers.push(new ColorLayer(particle.color, dist));
             }
 
-            Vector incoming1 = ray.scale(-1).normalize();
-            Vector normal = particle.pos.subtract(newOrigin).normalize();
+            incoming1 = ray.scale(-1).normalize();
+            normal = particle.pos.subtract(newOrigin).normalize();
             ray = incoming1.add(normal.scale(2*incoming1.dot(normal))).normalize();
             origin = newOrigin;
 
@@ -280,8 +283,9 @@ public class RayTracer extends Camera{
         BigColor color = new BigColor(environment.BACKGROUND_COLOR);
         color.scale(1e100);
 
+        ColorLayer layer;
         while(layers.size()>0){
-            ColorLayer layer = layers.pop();
+            layer = layers.pop();
             if(layer.operation == ColorLayer.opType.ADD){
                 color.add(layer.color, layer.intensity);
                 color.scale(layer.dropoff);
@@ -319,9 +323,10 @@ public class RayTracer extends Camera{
 
     private void getIntersection(Vector rayOrigin, Vector rayVec, ArrayList<Particle> particles, int[] indices, BvhNode node, Intersection intersection){
         if(node.isLeaf){
+            Particle p; Vector diff; 
             for(int i = node.start; i<node.start + node.count; i++){
-                Particle p = particles.get(indices[i]);
-                Vector diff = rayOrigin.subtract(p.pos);
+                p = particles.get(indices[i]);
+                diff = rayOrigin.subtract(p.pos);
 
                 double a = rayVec.dot(rayVec);
                 double b = 2*diff.dot(rayVec);
@@ -351,31 +356,6 @@ public class RayTracer extends Camera{
 
 
         return;
-    }
-
-    private Intersection getIntersection(Vector rayOrigin, Vector rayVec, ArrayList<Particle> particles){
-        Particle intersectParticle = null;
-        double intersectDist = Double.POSITIVE_INFINITY;
-
-        for(Particle p : particles){
-            Vector diff = rayOrigin.subtract(p.pos);
-
-            double a = rayVec.dot(rayVec);
-            double b = 2*diff.dot(rayVec);
-            double c = diff.dot(diff) - p.rad*p.rad;
-
-            double discriminant = b*b - 4*a*c;
-
-            if(discriminant < 0) continue;
-            double dist = (-b - Math.sqrt(discriminant))/(2*a);
-            if(dist < 1e-9) dist = -dist - b/a;
-
-            if(dist < 1e-9) continue;
-            if(dist > intersectDist) continue;
-            intersectParticle = p; intersectDist = dist;
-        }
-        Vector intersectVec = rayOrigin.add(rayVec.scale(intersectDist));
-        return new Intersection(intersectParticle, intersectVec, intersectDist);
     }
 
     @Override
