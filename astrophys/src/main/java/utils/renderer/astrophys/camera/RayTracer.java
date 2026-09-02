@@ -97,7 +97,10 @@ public class RayTracer extends Camera{
         final Color[][] buf = new Color[WIDTH][HEIGHT];
 
         final int[] indices = new int[particles.size()];
-        final BvhNode node = buildBvhNode(particles, indices, 0, particles.size()-1);
+        for(int i = 0; i<indices.length; i++){
+            indices[i] = i;
+        }
+        final BvhNode node = buildBvhNode(particles, indices, 0, particles.size());
 
         int columns = WIDTH/pixelWidth, stripeSize = columns/THREAD_COUNT / 2;
         List<Future<?>> futures = new ArrayList<>(THREAD_COUNT/2);
@@ -109,10 +112,11 @@ public class RayTracer extends Camera{
             final int endCol = Math.min((n+1)*stripeSize*pixelWidth - WIDTH/2, WIDTH/2);
             futures.add(executor.submit(() -> {
                 Vector base = pos.add(right.scale(startCol+pixelWidth/2).addInPlace(up.scale(-HEIGHT/2+pixelHeight/2))).scaleInPlace(1/scale);
+                Vector pixel = new Vector(Vector.ORIGIN);
                 for(int i = startCol; i<endCol; i+=pixelWidth){
-                    Vector pixel = new Vector(base);
+                    pixel.copy(base);
                     for(int j = -HEIGHT/2; j<HEIGHT/2; j+=pixelHeight){
-                        buf[i+WIDTH/2][j+HEIGHT/2] = getColor(focus, pixel, particles);
+                        buf[i+WIDTH/2][j+HEIGHT/2] = getColor(focus, pixel, particles, node, indices);
                         pixel.addInPlace(stepUp);
                     }
                     base.addInPlace(stepRight);
@@ -140,8 +144,12 @@ public class RayTracer extends Camera{
     }
 
     class BvhNode {
-        double minX, minY, minZ;
-        double maxX, maxY, maxZ;
+        double minX = Double.POSITIVE_INFINITY, 
+               minY = Double.POSITIVE_INFINITY, 
+               minZ = Double.POSITIVE_INFINITY;
+        double maxX = Double.NEGATIVE_INFINITY, 
+               maxY = Double.NEGATIVE_INFINITY, 
+               maxZ = Double.NEGATIVE_INFINITY;
         BvhNode left, right;
         int start, count;
         boolean isLeaf;
@@ -152,13 +160,14 @@ public class RayTracer extends Camera{
     private BvhNode buildBvhNode(ArrayList<Particle> particles, int[] indices, int start, int count){
         BvhNode node = new BvhNode();
         for(int i = start; i<start+count; i++){
-            node.minX = Math.min(node.minX, particles.get(i).pos.x);
-            node.minY = Math.min(node.minY, particles.get(i).pos.y);
-            node.minZ = Math.min(node.minZ, particles.get(i).pos.z);
+            Particle p = particles.get(indices[i]);
+            node.minX = Math.min(node.minX, p.pos.x - p.rad);
+            node.minY = Math.min(node.minY, p.pos.y - p.rad);
+            node.minZ = Math.min(node.minZ, p.pos.z - p.rad);
 
-            node.maxX = Math.max(node.maxX, particles.get(i).pos.x);
-            node.maxY = Math.max(node.maxY, particles.get(i).pos.y);
-            node.maxZ = Math.max(node.maxZ, particles.get(i).pos.z);
+            node.maxX = Math.max(node.maxX, p.pos.x + p.rad);
+            node.maxY = Math.max(node.maxY, p.pos.y + p.rad);
+            node.maxZ = Math.max(node.maxZ, p.pos.z + p.rad);
         }
         
         if(count <= LEAF_SIZE){
@@ -169,17 +178,19 @@ public class RayTracer extends Camera{
         }
 
         double extentX = node.maxX - node.minX,
-                extentY = node.maxY - node.minY,
-                extentZ = node.maxZ - node.minZ;
+               extentY = node.maxY - node.minY,
+               extentZ = node.maxZ - node.minZ;
         double maxExtent = Math.max(extentX, Math.max(extentY, extentZ));
         int axis = 0;
         if(maxExtent==extentY) axis = 1;
         else if(maxExtent==extentZ) axis = 2;
 
-        quickSelect(particles, indices, start, count, axis);
+        quickSelect(particles, indices, start, start+count-1, axis);
         
-        node.left = buildBvhNode(particles, indices, start, count/2);
-        node.right = buildBvhNode(particles, indices, start+count/2, count/2);
+        int leftSize = count/2, rightSize = count - leftSize;
+
+        node.left = buildBvhNode(particles, indices, start, leftSize);
+        node.right = buildBvhNode(particles, indices, start+leftSize, rightSize);
         return node;
     }
 
@@ -227,14 +238,16 @@ public class RayTracer extends Camera{
         }
     }
 
-    private Color getColor(Vector focus, Vector pixel, ArrayList<Particle> particles){
+    private Color getColor(Vector focus, Vector pixel, ArrayList<Particle> particles, BvhNode node, int[] indices){
         Vector origin = pixel;
         Vector ray = pixel.subtract(focus).normalizeInPlace();
 
         int reflections = 0, maxReflections = !useLighting ? 1 : 30;
         Deque<ColorLayer> layers = new ArrayDeque<ColorLayer>();
         while(reflections<maxReflections){
-            Intersection intersection = getIntersection(origin, ray, particles);
+            Intersection intersection = new Intersection(null, null, Double.POSITIVE_INFINITY);
+            // Intersection intersection = getIntersection(origin, ray, particles, indices, node, intersection);
+            getIntersection(origin, ray, particles, indices, node, intersection);
             Particle particle = intersection.intersectParticle;
             Vector newOrigin = intersection.intersectPoint;
             double dist = intersection.intersectDist;
@@ -306,8 +319,8 @@ public class RayTracer extends Camera{
 
     private void getIntersection(Vector rayOrigin, Vector rayVec, ArrayList<Particle> particles, int[] indices, BvhNode node, Intersection intersection){
         if(node.isLeaf){
-            for(int i = node.start; i<node.count; i++){
-                Particle p = particles.get(i);
+            for(int i = node.start; i<node.start + node.count; i++){
+                Particle p = particles.get(indices[i]);
                 Vector diff = rayOrigin.subtract(p.pos);
 
                 double a = rayVec.dot(rayVec);
@@ -334,7 +347,7 @@ public class RayTracer extends Camera{
         if(intersectsBVH(rayOrigin, invX, invY, invZ, node.left)) 
             getIntersection(rayOrigin, rayVec, particles, indices, node.left, intersection);
         if(intersectsBVH(rayOrigin, invX, invY, invZ, node.right))
-            getIntersection(rayOrigin, rayVec, particles, indices, node.left, intersection);
+            getIntersection(rayOrigin, rayVec, particles, indices, node.right, intersection);
 
 
         return;

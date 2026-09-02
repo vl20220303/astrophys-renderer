@@ -17,6 +17,11 @@ public class Vector {
         this.x = other.x; this.y = other.y; this.z = other.z;
     }
 
+    public Vector copy(Vector other){
+        this.x = other.x; this.y = other.y; this.z = other.z;
+        return this;
+    }
+
     public Vector add(Vector other) {
         return new Vector(this.x + other.x, this.y + other.y, this.z + other.z);
     }
