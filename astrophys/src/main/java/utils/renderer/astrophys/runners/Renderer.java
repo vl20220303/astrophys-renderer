@@ -80,6 +80,6 @@ public class Renderer extends JPanel {
         int latency = (int) ((then-prev) / 1e6);
         int tot = (int) ((now-prev) / 1e6);
         prev = now;
-        System.out.printf("%s RENDERER  %s| paint: %d, latency: %d, frame: %d \n", "\u001B[32m", "\u001B[0m", elapsed, latency, tot);
+        System.out.printf("%s RENDERER  %s| paint: %d, latency: %d, tot: %d \n", "\u001B[32m", "\u001B[0m", elapsed, latency, tot);
     }
 }
