@@ -19,7 +19,7 @@ import jdk.incubator.vector.DoubleVector;
 import jdk.incubator.vector.VectorSpecies;
 
 public class RayTracer extends Camera{
-    private int pixelHeight = 2, pixelWidth = 3;
+    private int pixelHeight = 3, pixelWidth = 2;
     public double focalLength;
 
     private final int THREAD_COUNT = Math.max(Math.min(5, Runtime.getRuntime().availableProcessors()),1);
@@ -242,7 +242,7 @@ public class RayTracer extends Camera{
         Vector origin = pixel;
         Vector ray = pixel.subtract(focus).normalizeInPlace();
 
-        int reflections = 0, maxReflections = !useLighting ? 1 : 30;
+        int reflections = 0, maxReflections = !useLighting ? 1 : 5;
         Deque<ColorLayer> layers = new ArrayDeque<ColorLayer>();
 
         Intersection intersection; Particle particle;
@@ -322,38 +322,44 @@ public class RayTracer extends Camera{
     }
 
     private void getIntersection(Vector rayOrigin, Vector rayVec, ArrayList<Particle> particles, int[] indices, BvhNode node, Intersection intersection){
-        if(node.isLeaf){
-            Particle p; Vector diff; 
-            for(int i = node.start; i<node.start + node.count; i++){
-                p = particles.get(indices[i]);
-                diff = rayOrigin.subtract(p.pos);
-
-                double a = rayVec.dot(rayVec);
-                double b = 2*diff.dot(rayVec);
-                double c = diff.dot(diff) - p.rad*p.rad;
-
-                double discriminant = b*b - 4*a*c;
-
-                if(discriminant < 0) continue;
-                double dist = (-b - Math.sqrt(discriminant))/(2*a);
-                if(dist < 1e-9) dist = -dist - b/a;
-
-                if(dist < 1e-9) continue;
-                if(dist > intersection.intersectDist) continue;
-                intersection.intersectParticle = p; 
-                intersection.intersectDist = dist;
-                intersection.intersectPoint = rayOrigin.add(rayVec.scale(dist));
-            }
-            return;
-        }
-
         double invX = 1/rayVec.x, invY = 1/rayVec.y, invZ = 1/rayVec.z;
+        double a = rayVec.dot(rayVec);
+        Particle p; Vector diff = new Vector(Vector.ORIGIN);
 
-        if(intersectsBVH(rayOrigin, invX, invY, invZ, node.left)) 
-            getIntersection(rayOrigin, rayVec, particles, indices, node.left, intersection);
-        if(intersectsBVH(rayOrigin, invX, invY, invZ, node.right))
-            getIntersection(rayOrigin, rayVec, particles, indices, node.right, intersection);
-        return;
+        BvhNode[] stack = new BvhNode[64];
+        int head = 0;
+        stack[head++] = node;
+
+        while(head>0){
+            BvhNode current = stack[--head];
+            if(current.isLeaf){
+                for(int i = current.start; i<current.start + current.count; i++){
+                    p = particles.get(indices[i]);
+                    diff.copy(rayOrigin).subtractInPlace(p.pos);
+
+                    double b = 2*diff.dot(rayVec);
+                    double c = diff.dot(diff) - p.rad*p.rad;
+
+                    double discriminant = b*b - 4*a*c;
+
+                    if(discriminant < 0) continue;
+                    double dist = (-b - Math.sqrt(discriminant))/(2*a);
+                    if(dist < 1e-9) dist = -dist - b/a;
+
+                    if(dist < 1e-9) continue;
+                    if(dist > intersection.intersectDist) continue;
+                    intersection.intersectParticle = p;
+                    intersection.intersectDist = dist;
+                    intersection.intersectPoint = rayOrigin.add(rayVec.scale(dist));
+                }
+                continue;
+            }
+
+            if(intersectsBVH(rayOrigin, invX, invY, invZ, current.right))
+                stack[head++] = current.right;
+            if(intersectsBVH(rayOrigin, invX, invY, invZ, current.left))
+                stack[head++] = current.left;
+        }
     }
 
     @Override
