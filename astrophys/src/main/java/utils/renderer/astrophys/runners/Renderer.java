@@ -16,6 +16,8 @@ public class Renderer extends JPanel {
     private final Simulator simulator;
     private final Environment environment;
 
+    private long prev = System.nanoTime();
+
     public Renderer(Camera camera, Simulator simulator, Environment environment) {
         this(camera, simulator, new Display(camera), environment);
     }
@@ -75,6 +77,9 @@ public class Renderer extends JPanel {
 
         long now = System.nanoTime();
         int elapsed = (int) ((now-then) / 1e6);
-        System.out.printf("%s RENDERER  %s| paint: %d \n", "\u001B[32m", "\u001B[0m", elapsed);
+        int latency = (int) ((then-prev) / 1e6);
+        int tot = (int) ((now-prev) / 1e6);
+        prev = now;
+        System.out.printf("%s RENDERER  %s| paint: %d, latency: %d, frame: %d \n", "\u001B[32m", "\u001B[0m", elapsed, latency, tot);
     }
 }
