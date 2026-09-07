@@ -19,7 +19,7 @@ import jdk.incubator.vector.DoubleVector;
 import jdk.incubator.vector.VectorSpecies;
 
 public class RayTracer extends Camera{
-    private int pixelHeight = 3, pixelWidth = 2;
+    private int pixelHeight = 2, pixelWidth = 3;
     public double focalLength;
 
     private final int THREAD_COUNT = Math.max(Math.min(5, Runtime.getRuntime().availableProcessors()),1);
@@ -353,8 +353,6 @@ public class RayTracer extends Camera{
             getIntersection(rayOrigin, rayVec, particles, indices, node.left, intersection);
         if(intersectsBVH(rayOrigin, invX, invY, invZ, node.right))
             getIntersection(rayOrigin, rayVec, particles, indices, node.right, intersection);
-
-
         return;
     }
 

@@ -42,7 +42,7 @@ public class Main {
 
         Particle sun = new Particle()
                             .setAttributes(300, 1.98e16, Shape.SPHERE)
-                            .setColor(Color.ORANGE, 1e12)
+                            .setColor(Color.ORANGE, 3e11)
                             .fixed();
         Particle planet = new Particle()
                                 .setPos(new Vector(1000, 0, 0))
@@ -110,17 +110,17 @@ public class Main {
         // renderer2.init(frame2);
         // renderer2.run();
 
-        // Camera camera3 = new RayTracer(new Vector(0, 0, 1000));
-        // Renderer renderer3 = new Renderer(camera3, simulator, environment);
-        // JFrame frame3 = new JFrame("Astrophys Renderer - Raytraced");
-        // renderer3.init(frame3);
-        // renderer3.run();
+        Camera camera3 = new RayTracer(new Vector(0, 0, 1000));
+        Renderer renderer3 = new Renderer(camera3, simulator, environment);
+        JFrame frame3 = new JFrame("Astrophys Renderer - Raytraced");
+        renderer3.init(frame3);
+        renderer3.run();
 
-        Camera camera4 = new RayTracer(new Vector(0, 0, 1000));
-        camera4.useLighting();
-        Renderer renderer4 = new Renderer(camera4, simulator, environment);
-        JFrame frame4 = new JFrame("Astrophys Renderer - Raytraced with Lighting");
-        renderer4.init(frame4);
-        renderer4.run();
+        // Camera camera4 = new RayTracer(new Vector(0, 0, 1000));
+        // camera4.useLighting();
+        // Renderer renderer4 = new Renderer(camera4, simulator, environment);
+        // JFrame frame4 = new JFrame("Astrophys Renderer - Raytraced with Lighting");
+        // renderer4.init(frame4);
+        // renderer4.run();
     }
 }

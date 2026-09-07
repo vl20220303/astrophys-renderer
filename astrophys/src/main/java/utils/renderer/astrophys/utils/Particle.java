@@ -81,6 +81,12 @@ public class Particle{
         this.intensity = luminosity;
         return this;
     }
+    //* Set Reflectivity & Diffusion */
+    public Particle setSurface(double reflectivity, double diffusion){
+        this.reflectivity = reflectivity;
+        this.diffusion = diffusion;
+        return this;
+    }
     //* Fix particle in place */
     public Particle fixed(){ this.fixed = true; return this; }
     //* Set Collision Behavior */

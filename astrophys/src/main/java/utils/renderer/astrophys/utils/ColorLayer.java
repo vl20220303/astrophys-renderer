@@ -13,18 +13,18 @@ public class ColorLayer{
     public ColorLayer(Color c, double d, double i){
         this.color = c;
         this.intensity = i;
-        this.dropoff = Math.pow(1+d, -2);
+        this.dropoff = Math.pow(d, -2);
         this.operation = opType.ADD;
     }
     public ColorLayer(Color c, double d){
         this.color = c;
         this.intensity = 0;
-        this.dropoff = Math.pow(1+d, -2);
+        this.dropoff = Math.pow(d, -2);
         this.operation = opType.MULTIPLY;
     }
     public void compress(Color c, double d){
         this.color = ColorOps.multiply(this.color, color, 1);
-        this.dropoff *= Math.pow(1+d, -2);
+        this.dropoff *= Math.pow(d, -2);
     }
     @Override
     public String toString(){
