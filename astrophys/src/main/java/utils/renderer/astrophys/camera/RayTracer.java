@@ -102,12 +102,13 @@ public class RayTracer extends Camera{
         }
         final BvhNode node = buildBvhNode(particles, indices, 0, particles.size());
 
-        int columns = WIDTH/pixelWidth, stripeSize = columns/THREAD_COUNT / 2;
-        List<Future<?>> futures = new ArrayList<>(THREAD_COUNT/2);
+        int TASKS_PER_THREAD = (particles.size() < 50) ? 16 : ((particles.size() < 100) ? 4 : 2);
+        int columns = WIDTH/pixelWidth, stripeSize = columns/THREAD_COUNT / TASKS_PER_THREAD;
+        List<Future<?>> futures = new ArrayList<>(THREAD_COUNT/TASKS_PER_THREAD);
 
         final Vector stepUp = up.scale(pixelHeight / scale), stepRight = right.scale(pixelWidth / scale);
 
-        for(int n = 0; n<THREAD_COUNT*2; n++){
+        for(int n = 0; n<THREAD_COUNT*TASKS_PER_THREAD; n++){
             final int startCol = n*stripeSize*pixelWidth - WIDTH/2;
             final int endCol = Math.min((n+1)*stripeSize*pixelWidth - WIDTH/2, WIDTH/2);
             futures.add(executor.submit(() -> {
