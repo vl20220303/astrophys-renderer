@@ -18,7 +18,7 @@ import utils.settings.Environment;
 import utils.utils.Particle;
 import utils.utils.Vector;
 import utils.utils.Particle.Behavior;
-import utils.utils.Particle.Shape;
+import utils.utils.Particle.SourceType;
 
 public class Main {
     public static void main(String[] args) {
@@ -32,20 +32,20 @@ public class Main {
                                         .enableViewIndicator()
                                         .enableZoomIndicator()
                                         .enableFocusIndicator()
+                                        // .setBackgroundColor(new Color(250,100,250))
                                         .setBackgroundColor(Color.BLACK)
                                         .build();
 
         
-
         ArrayList<Particle> particles = new ArrayList<>();
 
         Particle sun = new Particle()
-                            .setAttributes(300, 1.98e16, Shape.SPHERE)
-                            .setColor(Color.ORANGE, 1e12)
+                            .setAttributes(300, 1.98e16, SourceType.SPHERE)
+                            .setColor(Color.ORANGE, 1e100)
                             .fixed();
         Particle planet = new Particle()
-                                .setPos(new Vector(1000, 0, 0))
-                                .setAttributes(100, 3.29e2, Shape.SPHERE)
+                                .setPos(new Vector(990, 0, 0))
+                                .setAttributes(100, 3.29e2, SourceType.SPHERE)
                                 .setColor(Color.RED, 0)
                                 .fixed();
 
@@ -67,7 +67,7 @@ public class Main {
             eq.withRotationalVel(Vector.Z_AXIS.add(Vector.Y_AXIS), (Double r) -> 8*Math.pow(r, -0.5))
             .generate(3,
                     new Particle()
-                        .setAttributes(15, 2e12, Shape.SPHERE)
+                        .setAttributes(15, 2e12, SourceType.SPHERE)
                         .setColor(Color.GREEN, 0)
                         .fixed()
                         .setBehavior(Behavior.NONE));
@@ -79,7 +79,7 @@ public class Main {
             eq2.withRotationalVel(Vector.Z_AXIS.add(Vector.Y_AXIS), (Double r) -> 8*Math.pow(r, -0.5))
             .generate(2500,
                 new Particle()
-                    .setAttributes(10, 2e12, Shape.SPHERE)
+                    .setAttributes(10, 2e12, SourceType.SPHERE)
                     .setColor(Color.ORANGE, 0)
                     .fixed()
                     .setBehavior(Behavior.NONE));
@@ -91,14 +91,14 @@ public class Main {
             eq3.withRotationalVel((Vector diff) -> diff.scale(0.01))
             .generate(2500,
                 new Particle()
-                    .setAttributes(10, 2e14, Shape.SPHERE)
+                    .setAttributes(10, 2e14, SourceType.SPHERE)
                     .setColor(Color.BLUE, 0)
                     .fixed()
                     .setBehavior(Behavior.NONE));
         
         particles.add(sun);
         particles.add(planet);
-        particles.addAll(cloud);
+        // particles.addAll(cloud);
         // particles.addAll(cloud2);
         // particles.addAll(cloud3);
 
@@ -108,7 +108,6 @@ public class Main {
         simulatorThread.start();
 
         Camera camera = new PerspectiveProjector(new Vector(0, 0, 1000));
-        // camera.useGlow();
         Renderer renderer = new Renderer(camera, simulator, environment);
         JFrame frame = new JFrame("Astrophys Renderer");
         renderer.init(frame);

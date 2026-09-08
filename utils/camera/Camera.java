@@ -2,6 +2,7 @@ package utils.camera;
 import java.util.ArrayList;
 
 import utils.settings.Environment;
+import utils.utils.BigColor;
 import utils.utils.Particle;
 import utils.utils.Vector;
 
@@ -15,7 +16,10 @@ public abstract class Camera {
     public Vector normal, pos;
     public double zoom = 1, scale = 1;
 
-    public boolean useLighting, useGlow;
+    public boolean useLighting;
+    protected boolean useFocusColor;
+    protected double focusColorX, focusColorY;
+    protected BigColor focusColor = new BigColor(Color.WHITE);
 
     public Camera(Vector pos, Vector normal){
         this.pos = pos; this.normal = normal.normalize();
@@ -23,7 +27,13 @@ public abstract class Camera {
     }
 
     public void useLighting(){ this.useLighting = true; }
-    public void useGlow(){ this.useGlow = true; }
+
+    public void enableFocusColor(){
+        useFocusColor = useLighting;
+    }
+    public void disableFocusColor(){
+        useFocusColor = false;
+    }
 
     public void setEnvironment(Environment environment){ this.environment = environment; }
 
@@ -38,6 +48,8 @@ public abstract class Camera {
     
     public abstract void render(ArrayList<Particle> particles, Graphics2D g);
 
+    public abstract void setFocusColor(double dx, double dy);
+
     public void drawGrid(Graphics2D g) {
         double gridMin = -100 ;
         double gridMax = 100;
@@ -47,13 +59,13 @@ public abstract class Camera {
             Point[] line = projectLineToScreen(new Vector(x, gridMin, 0), new Vector(x, gridMax, 0));
             if(line == null) continue;
             g.setColor(Color.ORANGE);
-            g.drawLine((int) (line[0].x*scale), (int) (line[0].y*scale), (int) (line[1].x*scale), (int) (line[1].y*scale));
+            g.drawLine((int) (line[0].x), (int) (line[0].y), (int) (line[1].x), (int) (line[1].y));
         }
         for (double y = gridMin + step; y <= gridMax - step; y += step) {
             Point[] line = projectLineToScreen(new Vector(gridMin, y, 0), new Vector(gridMax, y, 0));
             if(line == null) continue;
             g.setColor(Color.ORANGE);
-            g.drawLine((int) (line[0].x*scale), (int) (line[0].y*scale), (int) (line[1].x*scale), (int) (line[1].y*scale));
+            g.drawLine((int) (line[0].x), (int) (line[0].y), (int) (line[1].x), (int) (line[1].y));
         }
     }
 

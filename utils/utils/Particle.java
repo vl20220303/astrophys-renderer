@@ -12,15 +12,16 @@ public class Particle{
 
     public double rad  = 0;
     public double mass = 0;
-    public Shape shape = Shape.SPHERE;
-    public enum Shape{
+    public SourceType shape = SourceType.SPHERE;
+    public enum SourceType{
         SPHERE,
         IMAGE;
     }
 
     public Color color = Color.BLACK;
     public double intensity = 0;
-    public double reflectivity = 0;
+
+    public double reflectivity = 1;
     public double diffusion = 0;
 
     public boolean fixed = false;
@@ -39,7 +40,7 @@ public class Particle{
 
     public Particle(){}
 
-    public Particle(Vector pos, int rad, double mass, Shape shape, Vector vel, Color luminosity, boolean fixed, Behavior collideType){
+    public Particle(Vector pos, int rad, double mass, SourceType shape, Vector vel, Color luminosity, boolean fixed, Behavior collideType){
         this.pos = new Vector(pos); this.rad = rad; this.mass = mass; this.shape = shape; this.vel = new Vector(vel); this.color = luminosity; this.fixed = fixed; this.collideType = collideType;
 
         this.accel = new Vector(0,0,0);
@@ -69,7 +70,7 @@ public class Particle{
     //* Set Velocity */
     public Particle setVel(Vector vel){ this.vel = new Vector(vel); return this; }
     //* Set Radius, Mass, & Shape */
-    public Particle setAttributes(double rad, double mass, Shape shape){
+    public Particle setAttributes(double rad, double mass, SourceType shape){
         this.rad = rad;
         this.mass = mass;
         this.shape = shape;
@@ -79,6 +80,14 @@ public class Particle{
     public Particle setColor(Color color, double luminosity){
         this.color = color;
         this.intensity = luminosity;
+        return this;
+    }
+    //* Set Reflectivity & Diffusion Coef. 
+    // Reflectivity: (no reflection) 0...1 (lossless reflection) 
+    // Diffusion: (no diffusion / pure reflection) 0...1 (apply diffusion ONLY) */
+    public Particle setSurface(double reflectivity, double diffusion){
+        this.reflectivity = reflectivity;
+        this.diffusion = diffusion;
         return this;
     }
     //* Fix particle in place */

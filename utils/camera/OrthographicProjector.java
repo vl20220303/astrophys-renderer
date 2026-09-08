@@ -5,7 +5,7 @@ import java.util.ArrayList;
 
 import utils.utils.Particle;
 import utils.utils.Vector;
-import utils.utils.Particle.Shape;
+import utils.utils.Particle.SourceType;
 
 public class OrthographicProjector extends Camera{
     public OrthographicProjector(Vector pos, Vector normal){
@@ -68,6 +68,12 @@ public class OrthographicProjector extends Camera{
         pos = origin.subtract(normal.scale(zoom));
     }
 
+    @Override
+    public void setFocusColor(double dx, double dy) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setFocusColor'");
+    }
+
     public void render(ArrayList<Particle> particles, Graphics2D g){
         particles.sort((a, b) -> {
             double da = a.pos.subtract(pos).dot(normal);
@@ -91,7 +97,7 @@ public class OrthographicProjector extends Camera{
             if(r<0.5) continue;
             
             g.setColor(p.color);
-            if(p.shape==Shape.SPHERE){
+            if(p.shape==SourceType.SPHERE){
                 g.fillOval((int) ((x-r)*scale), (int) ((y-r)*scale), (int) ((2*r)*scale), (int) ((2*r)*scale));
             }
         }
@@ -131,8 +137,8 @@ public class OrthographicProjector extends Camera{
         double qx = qRel.dot(right);
         double qy = qRel.dot(up);
 
-        px /= zoom; py /= zoom;
-        qx /= zoom; qy /= zoom;
+        px *= scale / zoom; py *= scale / zoom;
+        qx *= scale / zoom; qy *= scale / zoom;
 
         return new Point[]{
             new Point((int) px, (int) py),

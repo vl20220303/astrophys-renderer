@@ -6,9 +6,10 @@ import java.awt.RadialGradientPaint;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 
+import utils.utils.ColorOps;
 import utils.utils.Particle;
 import utils.utils.Vector;
-import utils.utils.Particle.Shape;
+import utils.utils.Particle.SourceType;
 
 public class PerspectiveProjector extends Camera{
     private static final int CONSTANT_SCALING = 100;
@@ -76,6 +77,12 @@ public class PerspectiveProjector extends Camera{
         pos = origin.subtract(normal.scale(zoom));
     }
 
+    @Override
+    public void setFocusColor(double dx, double dy) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setFocusColor'");
+    }
+
     public void render(ArrayList<Particle> particles, Graphics2D g){
         particles.sort((a, b) -> {
             double da = a.pos.subtract(pos).dot(normal);
@@ -112,13 +119,13 @@ public class PerspectiveProjector extends Camera{
 
             double d = 2*r;
             
-            if(p.shape==Shape.SPHERE){
-                if(p.intensity>0 && useGlow){
-                    RadialGradientPaint rgp = new RadialGradientPaint(new Point2D.Double(x,y), (float) r*2, new float[]{.5f, 1f}, new Color[]{p.color.brighter(), new Color(0,0,0,0)});
-                    g.setPaint(rgp);
-                    g.fillOval((int) (x-2*r), (int) (y-2*r), (int) (2*d), (int) (2*d));
+            if(p.shape==SourceType.SPHERE){
+                Color realColor = p.color;
+                if(useLighting && p.intensity > 0){
+
                 }
-                g.setColor(p.color);
+                
+                g.setColor(realColor);
                 g.fillOval((int) (x-r), (int) (y-r), (int) d, (int) d);
             }
         }

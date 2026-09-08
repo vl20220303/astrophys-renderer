@@ -16,8 +16,6 @@ public class Controls implements MouseListener, MouseMotionListener, MouseWheelL
     private Point lastMouse;
     private boolean leftDown, rightDown;
 
-    private boolean shiftDown, controlDown;
-
     public Controls(Camera camera, JPanel panel) {
         this.camera = camera;
         this.panel = panel;
@@ -66,6 +64,10 @@ public class Controls implements MouseListener, MouseMotionListener, MouseWheelL
         if (controlDown) {
             camera.jump(e.getPoint().getX() - panel.getWidth()/2, -e.getPoint().getY() + panel.getHeight()/2);
         }
+        if (cDown) {
+            camera.setFocusColor(e.getPoint().getX() - panel.getWidth()/2, -e.getPoint().getY() + panel.getHeight()/2);
+        }
+        panel.repaint();
     }
 
     @Override
@@ -85,6 +87,8 @@ public class Controls implements MouseListener, MouseMotionListener, MouseWheelL
     @Override public void mouseEntered(MouseEvent e) {}
     @Override public void mouseExited(MouseEvent e) {}
 
+    private boolean shiftDown, controlDown, cDown;
+
     // Keypress events
     @Override
     public void keyPressed(KeyEvent e) {
@@ -94,6 +98,10 @@ public class Controls implements MouseListener, MouseMotionListener, MouseWheelL
                 break;
             case KeyEvent.VK_SHIFT:
                 shiftDown = true;
+                break;
+            case KeyEvent.VK_C:
+                cDown = true;
+                camera.enableFocusColor();
                 break;
         }
     }
@@ -106,6 +114,10 @@ public class Controls implements MouseListener, MouseMotionListener, MouseWheelL
                 break;
             case KeyEvent.VK_SHIFT:
                 shiftDown = false;
+                break;
+            case KeyEvent.VK_C:
+                cDown = false;
+                camera.disableFocusColor();
                 break;
         }
     }

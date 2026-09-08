@@ -9,6 +9,9 @@ public class BigColor{
         g = c.getGreen();
         b = c.getBlue();
     }
+    public BigColor(double r, double g, double b){
+        this.r = r; this.g = g; this.b = b;
+    }
     public void add(Color c, double intensity){
         r += c.getRed() * intensity;
         g += c.getGreen() * intensity;
@@ -28,6 +31,16 @@ public class BigColor{
         double max = Math.max(r, Math.max(g, b));
         double scale = max > 255 ? 255.0 / max : 1.0;
         return new Color((int)(r*scale), (int)(g*scale), (int)(b*scale));
+    }
+    public Color normalizeTo(BigColor color){
+        double maxIntensity = color.intensity();
+        if(maxIntensity==0){ return this.normalize(); }
+        double scale = this.intensity()/maxIntensity;
+        BigColor newColor = new BigColor(r*scale, g*scale, b*scale);
+        return newColor.normalize();
+    }
+    public double intensity(){
+        return this.r + this.g + this.b;
     }
     public String toString(){
         return "[r=" + r + ",g=" + g + ",b=" + b + "]";

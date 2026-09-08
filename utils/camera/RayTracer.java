@@ -8,11 +8,12 @@ import java.util.Deque;
 
 import utils.utils.BigColor;
 import utils.utils.ColorLayer;
+import utils.utils.ColorOps;
 import utils.utils.Particle;
 import utils.utils.Vector;
 
 public class RayTracer extends Camera{
-    private int pixelHeight = 3, pixelWidth = 2;
+    private int pixelHeight = 1, pixelWidth = 1;
     public double focalLength;
 
     public RayTracer(Vector pos, Vector normal){
@@ -78,26 +79,44 @@ public class RayTracer extends Camera{
     }
 
     @Override
+    public void setFocusColor(double ox, double oy){
+        focusColorX = ox; focusColorY = oy;
+    }
+
+    @Override
     public void render(ArrayList<Particle> particles, Graphics2D g){
         Vector up = new Vector(0, 1, 0);
         Vector right = normal.cross(up).normalize();
         up = right.cross(normal).normalize();
 
-        Vector focus = normal.scale(-focalLength);
+        Vector focus = pos.add(normal.scale(-focalLength));
         for(int i = (int) (-environment.RESOLUTION * environment.ASPECT_RATIO/2); i<environment.RESOLUTION * environment.ASPECT_RATIO/2; i+=pixelWidth){
             for(int j = (int) (-environment.RESOLUTION/2); j<environment.RESOLUTION/2; j+=pixelHeight){
                 Vector pixel = pos.add(right.scale(i+pixelWidth/2).addInPlace(up.scale(j+pixelHeight/2)).scaleInPlace(1/scale));
-                g.setColor(getColor(focus, pixel, particles));
+                BigColor origColor = getColor(focus, pixel, particles);
+
+                Color dispColor;
+
+                if(useFocusColor){
+                    if(Math.abs(i-focusColorX)<pixelWidth && Math.abs(j-focusColorY)<pixelHeight){ 
+                        focusColor = origColor; 
+                    }
+                    dispColor = origColor.normalizeTo(focusColor);
+                } else{
+                    dispColor = origColor.normalize();
+                }
+
+                g.setColor(dispColor);
                 g.fillRect(i, j, pixelWidth, pixelHeight);
             }
         }
     }
 
-    private Color getColor(Vector focus, Vector pixel, ArrayList<Particle> particles){
+    private BigColor getColor(Vector focus, Vector pixel, ArrayList<Particle> particles){
         Vector origin = pixel;
         Vector ray = pixel.subtract(focus);
 
-        int reflections = 0, maxReflections = !useLighting ? 1 : 20;
+        int reflections = 0, maxReflections = !useLighting ? 1 : 10;
         Deque<ColorLayer> layers = new ArrayDeque<ColorLayer>();
         while(reflections<maxReflections){
             Intersection intersection = getIntersection(origin, ray, particles);
@@ -108,30 +127,33 @@ public class RayTracer extends Camera{
             if(particle==null){ break; }
 
             if(!useLighting){
-                return particle.color;
+                return new BigColor(particle.color);
             }
+
+            Vector incoming = ray.scale(-1).normalize();
+            Vector normal = particle.pos.subtract(newOrigin).normalize();
+            double cosine = incoming.dot(normal);
+            ray = incoming.add(normal.scale(2*cosine)).normalize();
+            origin = newOrigin;
+
+            double diffuseLoss = (Math.abs(cosine) * particle.diffusion) + (1 - particle.diffusion);
+            double dropoffLoss = 1/(Math.pow(dist, 2)+1e-10);
+            double absorptionLoss = particle.reflectivity;
+            double intensityloss = diffuseLoss * dropoffLoss * absorptionLoss;
 
             if(particle.intensity == 0){
-                if(layers.size()>0 && layers.peek().operation == ColorLayer.opType.MULTIPLY){
-                    layers.peek().compress(particle.color, dist);
-                } else{
-                    layers.push(new ColorLayer(particle.color, dist));
-                }
+                layers.push(new ColorLayer(particle.color, intensityloss));
+                layers.push(new ColorLayer(environment.BACKGROUND_COLOR, 1, environment.AMBIENT_INTENSITY));
             } else{
-                layers.push(new ColorLayer(particle.color, dist, particle.intensity));
-                layers.push(new ColorLayer(particle.color, dist));
+                layers.push(new ColorLayer(particle.color, intensityloss, particle.intensity));
+                layers.push(new ColorLayer(particle.color, intensityloss));
+                layers.push(new ColorLayer(environment.BACKGROUND_COLOR, 1, environment.AMBIENT_INTENSITY));
             }
-
-            Vector incoming1 = ray.scale(-1).normalize();
-            Vector normal = particle.pos.subtract(newOrigin).normalize();
-            ray = incoming1.add(normal.scale(2*incoming1.dot(normal))).normalize();
-            origin = newOrigin;
 
             reflections++;
         }
 
         BigColor color = new BigColor(environment.BACKGROUND_COLOR);
-        color.scale(1e100);
 
         while(layers.size()>0){
             ColorLayer layer = layers.pop();
@@ -142,7 +164,7 @@ public class RayTracer extends Camera{
                 color.multiply(layer.color, layer.dropoff);
             }
         }
-        return color.normalize();
+        return color;
     }
 
     private class Intersection{
@@ -182,6 +204,7 @@ public class RayTracer extends Camera{
 
     @Override
     protected Point[] projectLineToScreen(Vector p, Vector q) {
+        
         throw new Error("Unimplemented method projectLineToScreen");
         // return null;
     }

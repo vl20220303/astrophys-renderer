@@ -10,6 +10,7 @@ public class Environment {
     public final double ASPECT_RATIO;           //width/height
     public final boolean ANTIALIASING_ENABLED;  //edge softening
     public final Color BACKGROUND_COLOR;
+    public final double AMBIENT_INTENSITY;
 
     // COORDINATE PLANE
     public final boolean DRAW_ORIGIN;           //draws origin axes
@@ -18,13 +19,14 @@ public class Environment {
     public final boolean DRAW_ZOOM_INDICATOR;   //draws zoom indicator in top right
     public final boolean DRAW_FOCUS_INDICATOR;
 
-    public Environment(int tick_speed, int frame_time, int resolution, double aspect_ratio, boolean antialiasing_on, Color background_color, boolean draw_origin, boolean draw_origin_grid, boolean draw_mini_origin, boolean draw_zoom_indicator, boolean draw_focus_indicator){
+    public Environment(int tick_speed, int frame_time, int resolution, double aspect_ratio, boolean antialiasing_on, Color background_color, double ambient_intensity, boolean draw_origin, boolean draw_origin_grid, boolean draw_mini_origin, boolean draw_zoom_indicator, boolean draw_focus_indicator){
         this.TICK_SPEED = tick_speed;
         this.FRAME_TIME = frame_time;
         this.RESOLUTION = resolution;
         this.ASPECT_RATIO = aspect_ratio;
         this.ANTIALIASING_ENABLED = antialiasing_on;
         this.BACKGROUND_COLOR = background_color;
+        this.AMBIENT_INTENSITY = ambient_intensity;
         this.DRAW_ORIGIN = draw_origin;
         this.DRAW_ORIGIN_GRID = draw_origin_grid;
         this.DRAW_MINI_ORIGIN = draw_mini_origin;
@@ -40,6 +42,7 @@ public class Environment {
         private double aspect_ratio = 1.778;
         private boolean antialiasing_on = false;
         private Color background_color = Color.WHITE;
+        private double ambient_intensity = 1e5;
 
         private boolean draw_origin = false;
         private boolean draw_origin_grid = false;
@@ -48,7 +51,7 @@ public class Environment {
         private boolean draw_focus_indicator = false;
 
         public Environment build(){
-            return new Environment(tick_speed, frame_time, resolution, aspect_ratio, antialiasing_on, background_color, draw_origin, draw_origin_grid, draw_mini_origin, draw_zoom_indicator, draw_focus_indicator);
+            return new Environment(tick_speed, frame_time, resolution, aspect_ratio, antialiasing_on, background_color, ambient_intensity, draw_origin, draw_origin_grid, draw_mini_origin, draw_zoom_indicator, draw_focus_indicator);
         }
 
         /** Set tick speed (milliseconds). */
@@ -76,6 +79,7 @@ public class Environment {
         public Builder enableAntiAliasing(){ antialiasing_on = true; return this; }
 
         public Builder setBackgroundColor(Color c){ background_color = c; return this; }
+        public Builder setAmbientIntensity(Double d){ ambient_intensity = d; return this; }
 
         public Builder enableOrigin(){ draw_origin = true; return this; }
         public Builder enableOriginGrid(){ draw_origin_grid = true; return this; }

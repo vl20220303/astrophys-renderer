@@ -29,4 +29,11 @@ public class ColorOps {
         r/=colors.length; g/=colors.length; b/=colors.length; 
         return new Color(r,g,b);
     }
+
+    public static Color scale(Color color, double dropoff){
+        int r = (int) (color.getRed() * dropoff);
+        int g = (int) (color.getGreen() * dropoff);
+        int b = (int) (color.getBlue() * dropoff);
+        return new Color(r,g,b);
+    }
 }
