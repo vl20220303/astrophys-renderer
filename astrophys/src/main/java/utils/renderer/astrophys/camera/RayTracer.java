@@ -243,7 +243,8 @@ public class RayTracer extends Camera{
         Vector ray = pixel.subtract(focus).normalizeInPlace();
 
         int reflections = 0, maxReflections = !useLighting ? 1 : 5;
-        Deque<ColorLayer> layers = new ArrayDeque<ColorLayer>();
+        ColorLayer[] layers = new ColorLayer[2*maxReflections+1];
+        int head = 0;
 
         Intersection intersection; Particle particle;
         Vector newOrigin, incoming1, normal;
@@ -261,15 +262,16 @@ public class RayTracer extends Camera{
                 return particle.color;
             }
 
+            if(reflections == 0) dist = 0;
             if(particle.intensity == 0){
-                if(layers.size()>0 && layers.peek().operation == ColorLayer.opType.MULTIPLY){
-                    layers.peek().compress(particle.color, dist);
+                if(head>0 && layers[head-1].operation == ColorLayer.opType.MULTIPLY){
+                    layers[head-1].compress(particle.color, dist);
                 } else{
-                    layers.push(new ColorLayer(particle.color, dist));
+                    layers[head++] = new ColorLayer(particle.color, dist);
                 }
             } else{
-                layers.push(new ColorLayer(particle.color, dist, particle.intensity));
-                layers.push(new ColorLayer(particle.color, dist));
+                layers[head++] = new ColorLayer(particle.color, dist, particle.intensity);
+                layers[head++] = new ColorLayer(particle.color, dist);
             }
 
             incoming1 = ray.scale(-1).normalize();
@@ -284,8 +286,8 @@ public class RayTracer extends Camera{
         color.scale(1e100);
 
         ColorLayer layer;
-        while(layers.size()>0){
-            layer = layers.pop();
+        while(head>0){
+            layer = layers[--head];
             if(layer.operation == ColorLayer.opType.ADD){
                 color.add(layer.color, layer.intensity);
                 color.scale(layer.dropoff);

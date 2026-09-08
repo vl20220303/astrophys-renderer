@@ -1,6 +1,6 @@
 module astrophys.renderer {
     requires java.base;
-    requires java.desktop;
+    requires transitive java.desktop;
     requires jdk.incubator.vector;
 
     exports utils.renderer.astrophys.camera;
