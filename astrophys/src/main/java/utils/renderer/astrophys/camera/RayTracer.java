@@ -2,6 +2,7 @@ package utils.renderer.astrophys.camera;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.image.BufferedImage;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -137,12 +138,28 @@ public class RayTracer extends Camera{
             }
         }
 
-        for(int i = -WIDTH/2; i<WIDTH/2; i+=pixelWidth){
-            for(int j = -HEIGHT/2; j<HEIGHT/2; j+=pixelHeight){
-                g.setColor(buf[i+WIDTH/2][j+HEIGHT/2]);
-                g.fillRect(i, j, pixelWidth, pixelHeight);
+    
+        BufferedImage img = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
+        int[] pixels = ((java.awt.image.DataBufferInt) img.getRaster().getDataBuffer()).getData();
+
+        for(int x = 0; x < WIDTH; x += pixelWidth) {
+            for(int y = 0; y < HEIGHT; y += pixelHeight) {
+                int rgb = buf[x][y].getRGB();
+
+                for (int dx = 0; dx < pixelWidth; dx++) {
+                    int px = x + dx;
+                    if (px >= WIDTH) break;
+
+                    for (int dy = 0; dy < pixelHeight; dy++) {
+                        int py = y + dy;
+                        if (py >= HEIGHT) break;
+                        pixels[py * WIDTH + px] = rgb;
+                    }
+                }
             }
         }
+
+        g.drawImage(img, -WIDTH / 2, -HEIGHT / 2, null);
     }
 
     class BvhNode {
@@ -328,7 +345,7 @@ public class RayTracer extends Camera{
     private void getIntersection(Vector rayOrigin, Vector rayVec, ArrayList<Particle> particles, int[] indices, BvhNode node, Intersection intersection){
         double invX = 1/rayVec.x, invY = 1/rayVec.y, invZ = 1/rayVec.z;
         double a = rayVec.dot(rayVec);
-        Particle p; Vector diff = new Vector(Vector.ORIGIN);
+        Particle p;
 
         BvhNode[] stack = new BvhNode[64];
         int head = 0;
@@ -357,27 +374,29 @@ public class RayTracer extends Camera{
                     x[i] = p.pos.x; y[i] = p.pos.y; z[i] = p.pos.z; r[i] = p.rad;
                 }
 
-                var mask = SPECIES.indexInRange(0, current.count);
-                var X = DoubleVector.fromArray(SPECIES, x, 0, mask);
-                var Y = DoubleVector.fromArray(SPECIES, y, 0, mask);
-                var Z = DoubleVector.fromArray(SPECIES, z, 0, mask);
-                var R = DoubleVector.fromArray(SPECIES, r, 0, mask);
-
-                var Dx = Ox.sub(X); var Dy = Oy.sub(Y); var Dz = Oz.sub(Z);
-                var B = Dx.fma(Rx, Dy.fma(Ry, Dz.mul(Rz))).mul(2);
-                var C = Dx.fma(Dx, Dy.fma(Dy, Dz.mul(Dz))).sub(R.mul(R));
-                var Dscrm = B.mul(B).sub(A.mul(C).mul(4));
-                var sqrtD = Dscrm.lanewise(VectorOperators.SQRT, mask);
-                var Dist = B.add(sqrtD).div(A).div(-2);
-                var Alt = Dist.add(B.div(A)).mul(-1);
-
                 double[] discriminants = new double[current.count];
                 double[] dists = new double[current.count];
                 double[] alts = new double[current.count];
 
-                Dscrm.intoArray(discriminants, 0, mask);
-                Dist.intoArray(dists, 0, mask);
-                Alt.intoArray(alts, 0, mask);
+                for(int offset = 0; offset < current.count; offset += SPECIES.length()){
+                    var mask = SPECIES.indexInRange(offset, current.count);
+                    var X = DoubleVector.fromArray(SPECIES, x, offset, mask);
+                    var Y = DoubleVector.fromArray(SPECIES, y, offset, mask);
+                    var Z = DoubleVector.fromArray(SPECIES, z, offset, mask);
+                    var R = DoubleVector.fromArray(SPECIES, r, offset, mask);
+
+                    var Dx = Ox.sub(X); var Dy = Oy.sub(Y); var Dz = Oz.sub(Z);
+                    var B = Dx.fma(Rx, Dy.fma(Ry, Dz.mul(Rz))).mul(2);
+                    var C = Dx.fma(Dx, Dy.fma(Dy, Dz.mul(Dz))).sub(R.mul(R));
+                    var Dscrm = B.mul(B).sub(A.mul(C).mul(4));
+                    var sqrtD = Dscrm.lanewise(VectorOperators.SQRT, mask);
+                    var Dist = B.add(sqrtD).div(A).div(-2);
+                    var Alt = Dist.add(B.div(A)).mul(-1);
+
+                    Dscrm.intoArray(discriminants, offset, mask);
+                    Dist.intoArray(dists, offset, mask);
+                    Alt.intoArray(alts, offset, mask);
+                }
 
                 for(int i = 0; i<current.count; i++){
                     double discriminant = discriminants[i];
@@ -392,26 +411,6 @@ public class RayTracer extends Camera{
                     intersection.intersectDist = dist;
                     intersection.intersectPoint = rayOrigin.add(rayVec.scale(dist));
                 }
-
-                // for(int i = current.start; i<current.start + current.count; i++){
-                //     p = particles.get(indices[i]);
-                //     diff.copy(rayOrigin).subtractInPlace(p.pos);
-
-                //     double b = 2*diff.dot(rayVec);
-                //     double c = diff.dot(diff) - p.rad*p.rad;
-
-                //     double discriminant = b*b - 4*a*c;
-
-                //     if(discriminant < 0) continue;
-                //     double dist = (-b - Math.sqrt(discriminant))/(2*a);
-                //     if(dist < 1e-9) dist = -dist - b/a;
-
-                //     if(dist < 1e-9) continue;
-                //     if(dist > intersection.intersectDist) continue;
-                //     intersection.intersectParticle = p;
-                //     intersection.intersectDist = dist;
-                //     intersection.intersectPoint = rayOrigin.add(rayVec.scale(dist));
-                // }
                 continue;
             }
 
