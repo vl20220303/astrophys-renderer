@@ -16,13 +16,14 @@ import utils.renderer.astrophys.utils.ColorLayer;
 import utils.renderer.astrophys.utils.Particle;
 import utils.renderer.astrophys.utils.Vector;
 import jdk.incubator.vector.DoubleVector;
+import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorSpecies;
 
 public class RayTracer extends Camera{
     private int pixelHeight = 3, pixelWidth = 2;
     public double focalLength;
 
-    private final int THREAD_COUNT = Math.max(Math.min(5, Runtime.getRuntime().availableProcessors()),1);
+    private final int THREAD_COUNT = Math.max(Runtime.getRuntime().availableProcessors(),1);
     private ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
 
     public RayTracer(Vector pos, Vector normal){
@@ -332,29 +333,85 @@ public class RayTracer extends Camera{
         BvhNode[] stack = new BvhNode[64];
         int head = 0;
         stack[head++] = node;
+        
+        var A = DoubleVector.broadcast(SPECIES, a);
+
+        var Ox = DoubleVector.broadcast(SPECIES, rayOrigin.x);
+        var Oy = DoubleVector.broadcast(SPECIES, rayOrigin.y);
+        var Oz = DoubleVector.broadcast(SPECIES, rayOrigin.z);
+
+        var Rx = DoubleVector.broadcast(SPECIES, rayVec.x);
+        var Ry = DoubleVector.broadcast(SPECIES, rayVec.y);
+        var Rz = DoubleVector.broadcast(SPECIES, rayVec.z);
 
         while(head>0){
             BvhNode current = stack[--head];
             if(current.isLeaf){
-                for(int i = current.start; i<current.start + current.count; i++){
-                    p = particles.get(indices[i]);
-                    diff.copy(rayOrigin).subtractInPlace(p.pos);
+                double[] x = new double[current.count];
+                double[] y = new double[current.count];
+                double[] z = new double[current.count];
+                double[] r = new double[current.count];
+                
+                for(int i = 0; i<current.count; i++){
+                    p = particles.get(indices[current.start+i]);
+                    x[i] = p.pos.x; y[i] = p.pos.y; z[i] = p.pos.z; r[i] = p.rad;
+                }
 
-                    double b = 2*diff.dot(rayVec);
-                    double c = diff.dot(diff) - p.rad*p.rad;
+                var mask = SPECIES.indexInRange(0, current.count);
+                var X = DoubleVector.fromArray(SPECIES, x, 0, mask);
+                var Y = DoubleVector.fromArray(SPECIES, y, 0, mask);
+                var Z = DoubleVector.fromArray(SPECIES, z, 0, mask);
+                var R = DoubleVector.fromArray(SPECIES, r, 0, mask);
 
-                    double discriminant = b*b - 4*a*c;
+                var Dx = Ox.sub(X); var Dy = Oy.sub(Y); var Dz = Oz.sub(Z);
+                var B = Dx.fma(Rx, Dy.fma(Ry, Dz.mul(Rz))).mul(2);
+                var C = Dx.fma(Dx, Dy.fma(Dy, Dz.mul(Dz))).sub(R.mul(R));
+                var Dscrm = B.mul(B).sub(A.mul(C).mul(4));
+                var sqrtD = Dscrm.lanewise(VectorOperators.SQRT, mask);
+                var Dist = B.add(sqrtD).div(A).div(-2);
+                var Alt = Dist.add(B.div(A)).mul(-1);
 
+                double[] discriminants = new double[current.count];
+                double[] dists = new double[current.count];
+                double[] alts = new double[current.count];
+
+                Dscrm.intoArray(discriminants, 0, mask);
+                Dist.intoArray(dists, 0, mask);
+                Alt.intoArray(alts, 0, mask);
+
+                for(int i = 0; i<current.count; i++){
+                    double discriminant = discriminants[i];
+                    double dist = dists[i];
+                    double alt = alts[i];
                     if(discriminant < 0) continue;
-                    double dist = (-b - Math.sqrt(discriminant))/(2*a);
-                    if(dist < 1e-9) dist = -dist - b/a;
+                    if(dist < 1e-9) dist = alt;
 
                     if(dist < 1e-9) continue;
                     if(dist > intersection.intersectDist) continue;
-                    intersection.intersectParticle = p;
+                    intersection.intersectParticle = particles.get(indices[current.start + i]);
                     intersection.intersectDist = dist;
                     intersection.intersectPoint = rayOrigin.add(rayVec.scale(dist));
                 }
+
+                // for(int i = current.start; i<current.start + current.count; i++){
+                //     p = particles.get(indices[i]);
+                //     diff.copy(rayOrigin).subtractInPlace(p.pos);
+
+                //     double b = 2*diff.dot(rayVec);
+                //     double c = diff.dot(diff) - p.rad*p.rad;
+
+                //     double discriminant = b*b - 4*a*c;
+
+                //     if(discriminant < 0) continue;
+                //     double dist = (-b - Math.sqrt(discriminant))/(2*a);
+                //     if(dist < 1e-9) dist = -dist - b/a;
+
+                //     if(dist < 1e-9) continue;
+                //     if(dist > intersection.intersectDist) continue;
+                //     intersection.intersectParticle = p;
+                //     intersection.intersectDist = dist;
+                //     intersection.intersectPoint = rayOrigin.add(rayVec.scale(dist));
+                // }
                 continue;
             }
 
