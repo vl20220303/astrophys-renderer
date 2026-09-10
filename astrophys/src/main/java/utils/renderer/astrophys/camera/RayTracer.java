@@ -21,10 +21,10 @@ import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorSpecies;
 
 public class RayTracer extends Camera{
-    private int pixelHeight = 3, pixelWidth = 2;
+    private int pixelHeight = 1, pixelWidth = 1;
     public double focalLength;
 
-    private final int THREAD_COUNT = Math.max(Runtime.getRuntime().availableProcessors(),1);
+    private final int THREAD_COUNT = Math.max(Runtime.getRuntime().availableProcessors()-1,1);
     private ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
 
     public RayTracer(Vector pos, Vector normal){
@@ -95,6 +95,8 @@ public class RayTracer extends Camera{
         final Vector up = right.cross(normal).normalize();
         Vector focus = normal.scale(-focalLength);
 
+        final long t0 = System.nanoTime();
+
         final int HEIGHT = (int) (environment.RESOLUTION), WIDTH = (int) (HEIGHT * environment.ASPECT_RATIO);
         final Color[][] buf = new Color[WIDTH][HEIGHT];
 
@@ -104,15 +106,20 @@ public class RayTracer extends Camera{
         }
         final BvhNode node = buildBvhNode(particles, indices, 0, particles.size());
 
+        final long t1 = System.nanoTime();
+
         int TASKS_PER_THREAD = (particles.size() < 50) ? 16 : ((particles.size() < 100) ? 4 : 2);
-        int columns = WIDTH/pixelWidth, stripeSize = columns/THREAD_COUNT / TASKS_PER_THREAD;
-        List<Future<?>> futures = new ArrayList<>(THREAD_COUNT/TASKS_PER_THREAD);
+        int columns = WIDTH/pixelWidth;
+        int taskCount = THREAD_COUNT * TASKS_PER_THREAD;
+        List<Future<?>> futures = new ArrayList<>(taskCount);
 
         final Vector stepUp = up.scale(pixelHeight / scale), stepRight = right.scale(pixelWidth / scale);
 
-        for(int n = 0; n<THREAD_COUNT*TASKS_PER_THREAD; n++){
-            final int startCol = n*stripeSize*pixelWidth - WIDTH/2;
-            final int endCol = Math.min((n+1)*stripeSize*pixelWidth - WIDTH/2, WIDTH/2);
+        for(int n = 0; n<taskCount; n++){
+            final int firstColumn = n * columns / taskCount;
+            final int lastColumn = (n + 1) * columns / taskCount;
+            final int startCol = firstColumn * pixelWidth - WIDTH/2;
+            final int endCol = lastColumn * pixelWidth - WIDTH/2;
             futures.add(executor.submit(() -> {
                 Vector base = pos.add(right.scale(startCol+pixelWidth/2).addInPlace(up.scale(-HEIGHT/2+pixelHeight/2))).scaleInPlace(1/scale);
                 Vector pixel = new Vector(Vector.ORIGIN);
@@ -138,7 +145,8 @@ public class RayTracer extends Camera{
             }
         }
 
-    
+        final long t2 = System.nanoTime();
+
         BufferedImage img = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
         int[] pixels = ((java.awt.image.DataBufferInt) img.getRaster().getDataBuffer()).getData();
 
@@ -160,6 +168,8 @@ public class RayTracer extends Camera{
         }
 
         g.drawImage(img, -WIDTH / 2, -HEIGHT / 2, null);
+        final long t3 = System.nanoTime();
+        // System.out.printf("%s BREAKDOWN %s| build: %.3f, trace: %.3f, paint: %.3f \n", "\u001B[35m", "\u001B[0m", (t1-t0)/1e6, (t2-t1)/1e6, (t3-t2)/1e6);
     }
 
     class BvhNode {
@@ -409,7 +419,6 @@ public class RayTracer extends Camera{
                     if(dist > intersection.intersectDist) continue;
                     intersection.intersectParticle = particles.get(indices[current.start + i]);
                     intersection.intersectDist = dist;
-                    intersection.intersectPoint = rayOrigin.add(rayVec.scale(dist));
                 }
                 continue;
             }
@@ -419,6 +428,8 @@ public class RayTracer extends Camera{
             if(intersectsBVH(rayOrigin, invX, invY, invZ, current.left))
                 stack[head++] = current.left;
         }
+        if(intersection.intersectParticle != null) 
+            intersection.intersectPoint = rayOrigin.add(rayVec.scale(intersection.intersectDist));
     }
 
     @Override
