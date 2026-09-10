@@ -356,70 +356,32 @@ public class RayTracer extends Camera{
     private void getIntersection(Vector rayOrigin, Vector rayVec, ArrayList<Particle> particles, int[] indices, BvhNode node, Intersection intersection){
         double invX = 1/rayVec.x, invY = 1/rayVec.y, invZ = 1/rayVec.z;
         double a = rayVec.dot(rayVec);
-        Particle p;
+        Particle p; Vector diff = new Vector(Vector.ORIGIN);
 
         BvhNode[] stack = new BvhNode[64];
         int head = 0;
         stack[head++] = node;
-        
-        var A = DoubleVector.broadcast(SPECIES, a);
-
-        var Ox = DoubleVector.broadcast(SPECIES, rayOrigin.x);
-        var Oy = DoubleVector.broadcast(SPECIES, rayOrigin.y);
-        var Oz = DoubleVector.broadcast(SPECIES, rayOrigin.z);
-
-        var Rx = DoubleVector.broadcast(SPECIES, rayVec.x);
-        var Ry = DoubleVector.broadcast(SPECIES, rayVec.y);
-        var Rz = DoubleVector.broadcast(SPECIES, rayVec.z);
-
         while(head>0){
             BvhNode current = stack[--head];
             if(current.isLeaf){
-                double[] x = new double[current.count];
-                double[] y = new double[current.count];
-                double[] z = new double[current.count];
-                double[] r = new double[current.count];
-                
-                for(int i = 0; i<current.count; i++){
-                    p = particles.get(indices[current.start+i]);
-                    x[i] = p.pos.x; y[i] = p.pos.y; z[i] = p.pos.z; r[i] = p.rad;
-                }
+                for(int i = current.start; i<current.start + current.count; i++){
+                    p = particles.get(indices[i]);
+                    diff.copy(rayOrigin).subtractInPlace(p.pos);
 
-                double[] discriminants = new double[current.count];
-                double[] dists = new double[current.count];
-                double[] alts = new double[current.count];
+                    double b = 2*diff.dot(rayVec);
+                    double c = diff.dot(diff) - p.rad*p.rad;
 
-                for(int offset = 0; offset < current.count; offset += SPECIES.length()){
-                    var mask = SPECIES.indexInRange(offset, current.count);
-                    var X = DoubleVector.fromArray(SPECIES, x, offset, mask);
-                    var Y = DoubleVector.fromArray(SPECIES, y, offset, mask);
-                    var Z = DoubleVector.fromArray(SPECIES, z, offset, mask);
-                    var R = DoubleVector.fromArray(SPECIES, r, offset, mask);
+                    double discriminant = b*b - 4*a*c;
 
-                    var Dx = Ox.sub(X); var Dy = Oy.sub(Y); var Dz = Oz.sub(Z);
-                    var B = Dx.fma(Rx, Dy.fma(Ry, Dz.mul(Rz))).mul(2);
-                    var C = Dx.fma(Dx, Dy.fma(Dy, Dz.mul(Dz))).sub(R.mul(R));
-                    var Dscrm = B.mul(B).sub(A.mul(C).mul(4));
-                    var sqrtD = Dscrm.lanewise(VectorOperators.SQRT, mask);
-                    var Dist = B.add(sqrtD).div(A).div(-2);
-                    var Alt = Dist.add(B.div(A)).mul(-1);
-
-                    Dscrm.intoArray(discriminants, offset, mask);
-                    Dist.intoArray(dists, offset, mask);
-                    Alt.intoArray(alts, offset, mask);
-                }
-
-                for(int i = 0; i<current.count; i++){
-                    double discriminant = discriminants[i];
-                    double dist = dists[i];
-                    double alt = alts[i];
                     if(discriminant < 0) continue;
-                    if(dist < 1e-9) dist = alt;
+                    double dist = (-b - Math.sqrt(discriminant))/(2*a);
+                    if(dist < 1e-9) dist = -dist - b/a;
 
                     if(dist < 1e-9) continue;
                     if(dist > intersection.intersectDist) continue;
-                    intersection.intersectParticle = particles.get(indices[current.start + i]);
+                    intersection.intersectParticle = p;
                     intersection.intersectDist = dist;
+                    intersection.intersectPoint = rayOrigin.add(rayVec.scale(dist));
                 }
                 continue;
             }
