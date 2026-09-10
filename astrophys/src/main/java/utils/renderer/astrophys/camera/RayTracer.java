@@ -169,7 +169,7 @@ public class RayTracer extends Camera{
 
         g.drawImage(img, -WIDTH / 2, -HEIGHT / 2, null);
         final long t3 = System.nanoTime();
-        // System.out.printf("%s BREAKDOWN %s| build: %.3f, trace: %.3f, paint: %.3f \n", "\u001B[35m", "\u001B[0m", (t1-t0)/1e6, (t2-t1)/1e6, (t3-t2)/1e6);
+        System.out.printf("%s BREAKDOWN %s| build: %.3f, trace: %.3f, paint: %.3f \n", "\u001B[35m", "\u001B[0m", (t1-t0)/1e6, (t2-t1)/1e6, (t3-t2)/1e6);
     }
 
     class BvhNode {
@@ -340,7 +340,7 @@ public class RayTracer extends Camera{
         }
     }
 
-    private boolean intersectsBVH(Vector rayOrigin, double invX, double invY, double invZ, BvhNode node){
+    private double intersectsBVH(Vector rayOrigin, double invX, double invY, double invZ, BvhNode node, double maxDist){
         double t1 = (node.maxX - rayOrigin.x)*invX,
                t2 = (node.minX - rayOrigin.x)*invX,
                t3 = (node.maxY - rayOrigin.y)*invY,
@@ -349,7 +349,8 @@ public class RayTracer extends Camera{
                t6 = (node.minZ - rayOrigin.z)*invZ;
         double tmin = Math.max(Math.max(Math.min(t1, t2), Math.min(t3, t4)), Math.min(t5, t6));
         double tmax = Math.min(Math.min(Math.max(t1, t2), Math.max(t3, t4)), Math.max(t5, t6));
-        return tmax > 0 && tmin <= tmax;
+        if(tmax > 0 && tmin <= tmax && tmin <= maxDist) return tmin;
+        return Double.POSITIVE_INFINITY;
     }
 
     private void getIntersection(Vector rayOrigin, Vector rayVec, ArrayList<Particle> particles, int[] indices, BvhNode node, Intersection intersection){
@@ -423,10 +424,22 @@ public class RayTracer extends Camera{
                 continue;
             }
 
-            if(intersectsBVH(rayOrigin, invX, invY, invZ, current.right))
-                stack[head++] = current.right;
-            if(intersectsBVH(rayOrigin, invX, invY, invZ, current.left))
-                stack[head++] = current.left;
+            double tRight = intersectsBVH(rayOrigin, invX, invY, invZ, current.right, intersection.intersectDist);
+            double tLeft = intersectsBVH(rayOrigin, invX, invY, invZ, current.left, intersection.intersectDist);
+            boolean hitRight = tRight != Double.POSITIVE_INFINITY;
+            boolean hitLeft  = tLeft  != Double.POSITIVE_INFINITY;
+
+            if (hitRight && hitLeft) {
+                if (tRight < tLeft) {
+                    stack[head++] = current.left;
+                    stack[head++] = current.right;
+                } else {
+                    stack[head++] = current.right;
+                    stack[head++] = current.left;
+                }
+            }
+            else if (hitRight) stack[head++] = current.right;
+            else if (hitLeft) stack[head++] = current.left;
         }
         if(intersection.intersectParticle != null) 
             intersection.intersectPoint = rayOrigin.add(rayVec.scale(intersection.intersectDist));
