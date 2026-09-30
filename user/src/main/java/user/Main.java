@@ -24,7 +24,7 @@ import utils.renderer.astrophys.utils.Particle.Shape;
 public class Main {
     public static void main(String[] args) {
         Constants constants = new Constants();
-        constants.setScale(1e10).setWeight(1e24).setTime(1e3).init();
+        constants.setScale(1e10).setWeight(1e24).setTime(1e1).init();
 
         Environment environment = new Environment.Builder()
                                         .use720p()
@@ -34,6 +34,8 @@ public class Main {
                                         .enableZoomIndicator()
                                         .enableFocusIndicator()
                                         .setBackgroundColor(Color.BLACK)
+                                        .enableOriginGrid()
+                                        .enableOrigin()
                                         .build();
 
         
@@ -42,13 +44,14 @@ public class Main {
 
         Particle sun = new Particle()
                             .setAttributes(300, 1.98e16, Shape.SPHERE)
-                            .setColor(Color.ORANGE, 3e11)
+                            .setColor(Color.ORANGE, 1e10)
                             .fixed();
         Particle planet = new Particle()
                                 .setPos(new Vector(1000, 0, 0))
                                 .setAttributes(100, 3.29e2, Shape.SPHERE)
-                                .setColor(Color.RED, 0)
-                                .fixed();
+                                .setColor(Color.RED, 0);
+                                // .fixed();
+
 
         Sphere eq = new Sphere(new Vector(0, 0, 0), 500, 800, (Double r) -> Math.pow(r-499, -1)+1e-4);
         eq.setResolution(1);
@@ -58,8 +61,8 @@ public class Main {
             .generate(500,
                     new Particle()
                         .setAttributes(15, 2e12, Shape.SPHERE)
-                        .setColor(Color.GREEN, 0)
-                        .fixed()
+                        .setColor(Color.WHITE, 0)
+                        // .fixed()
                         .setBehavior(Behavior.NONE));
 
         Disk eq2 = new Disk(new Vector(0,0,0), Vector.Y_AXIS, 500, 800, 10, (Double r) -> Math.pow(r-499, -1)+1e-3, (Double h) -> 1d);
@@ -67,42 +70,42 @@ public class Main {
         eq2.setup();
         ArrayList<Particle> cloud2 = 
             eq2.withRotationalVel(Vector.Z_AXIS.add(Vector.Y_AXIS), (Double r) -> 8*Math.pow(r, -0.5))
-            .generate(100,
+            .generate(500,
                 new Particle()
                     .setAttributes(10, 2e12, Shape.SPHERE)
-                    .setColor(Color.YELLOW, 0)
-                    .fixed()
+                    .setColor(Color.GREEN, 0)
+                    // .fixed()
                     .setBehavior(Behavior.NONE));
 
-        Ray eq3 = new Ray(new Vector(0,0,0), Vector.Y_AXIS.add(Vector.X_AXIS), 300, 1500, (Double r) -> Math.pow(r-299, -1)+1e-5, true);
+        Ray eq3 = new Ray(new Vector(0,0,0), Vector.Y_AXIS.add(Vector.X_AXIS), 1000, 1500, (Double r) -> Math.pow(r-999, -1)+1e-5, true);
         eq3.setResolution(0.1);
         eq3.setup();
         ArrayList<Particle> cloud3 = 
             eq3.withRotationalVel((Vector diff) -> diff.scale(0.01))
-            .generate(10,
+            .generate(500,
                 new Particle()
                     .setAttributes(10, 2e14, Shape.SPHERE)
-                    .setColor(Color.BLUE, 0)
-                    .fixed()
+                    .setColor(Color.RED, 0)
+                    // .fixed()
                     .setBehavior(Behavior.NONE));
         
         particles.add(sun);
         particles.add(planet);
         particles.addAll(cloud);
-        // particles.addAll(cloud2);
-        // particles.addAll(cloud3);
+        particles.addAll(cloud2);
+        particles.addAll(cloud3);
 
         Simulator simulator = new Simulator(particles, constants, environment);
 
         Thread simulatorThread = new Thread(simulator);
         simulatorThread.start();
 
-        // Camera camera = new PerspectiveProjector(new Vector(0, 0, 1000));
-        // camera.useGlow();
-        // Renderer renderer = new Renderer(camera, simulator, environment);
-        // JFrame frame = new JFrame("Astrophys Renderer");
-        // renderer.init(frame);
-        // renderer.run();
+        Camera camera = new PerspectiveProjector(new Vector(0, 0, 1000));
+        camera.useGlow();
+        Renderer renderer = new Renderer(camera, simulator, environment);
+        JFrame frame = new JFrame("Astrophys Renderer");
+        renderer.init(frame);
+        renderer.run();
 
         // Camera camera2 = new OrthographicProjector(new Vector(0, 0, 1000));
         // Renderer renderer2 = new Renderer(camera2, simulator, environment);

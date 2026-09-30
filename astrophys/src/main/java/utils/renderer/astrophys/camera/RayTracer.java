@@ -30,6 +30,7 @@ public class RayTracer extends Camera{
     public RayTracer(Vector pos, Vector normal){
         super(pos, normal);
         focalLength = normal.abs()*2;
+        pixelWidth = Math.min(pixelHeight, pixelWidth);
     }
 
     public RayTracer(Vector pos){
@@ -121,12 +122,15 @@ public class RayTracer extends Camera{
             final int startCol = firstColumn * pixelWidth - WIDTH/2;
             final int endCol = lastColumn * pixelWidth - WIDTH/2;
             futures.add(executor.submit(() -> {
+                Intersection intersection = new Intersection(null, null, Double.POSITIVE_INFINITY);
+                Vector diff = new Vector(Vector.ORIGIN);
+                BvhNode[] stack = new BvhNode[64];
                 Vector base = pos.add(right.scale(startCol+pixelWidth/2).addInPlace(up.scale(-HEIGHT/2+pixelHeight/2))).scaleInPlace(1/scale);
                 Vector pixel = new Vector(Vector.ORIGIN);
                 for(int i = startCol; i<endCol; i+=pixelWidth){
                     pixel.copy(base);
                     for(int j = -HEIGHT/2; j<HEIGHT/2; j+=pixelHeight){
-                        buf[i+WIDTH/2][j+HEIGHT/2] = getColor(focus, pixel, particles, node, indices);
+                        buf[i+WIDTH/2][j+HEIGHT/2] = getColor(focus, pixel, particles, node, indices, intersection, diff, stack);
                         pixel.addInPlace(stepUp);
                     }
                     base.addInPlace(stepRight);
@@ -267,20 +271,19 @@ public class RayTracer extends Camera{
         }
     }
 
-    private Color getColor(Vector focus, Vector pixel, ArrayList<Particle> particles, BvhNode node, int[] indices){
+    private Color getColor(Vector focus, Vector pixel, ArrayList<Particle> particles, BvhNode node, int[] indices, Intersection intersection, Vector diff, BvhNode[] stack){
         Vector origin = pixel;
         Vector ray = pixel.subtract(focus).normalizeInPlace();
 
-        int reflections = 0, maxReflections = !useLighting ? 1 : 5;
+        int reflections = 0, maxReflections = !useLighting ? 1 : 2;
         ColorLayer[] layers = new ColorLayer[2*maxReflections+1];
         int head = 0;
 
-        Intersection intersection; Particle particle;
+        Particle particle;
         Vector newOrigin, incoming1, normal;
 
         while(reflections<maxReflections){
-            intersection = new Intersection(null, null, Double.POSITIVE_INFINITY);
-            getIntersection(origin, ray, particles, indices, node, intersection);
+            getIntersection(origin, ray, particles, indices, node, intersection, diff, stack);
             particle = intersection.intersectParticle;
             newOrigin = intersection.intersectPoint;
             double dist = intersection.intersectDist;
@@ -353,13 +356,14 @@ public class RayTracer extends Camera{
         return Double.POSITIVE_INFINITY;
     }
 
-    private void getIntersection(Vector rayOrigin, Vector rayVec, ArrayList<Particle> particles, int[] indices, BvhNode node, Intersection intersection){
+    private void getIntersection(Vector rayOrigin, Vector rayVec, ArrayList<Particle> particles, int[] indices, BvhNode node, Intersection intersection, Vector diff, BvhNode[] stack){
         double invX = 1/rayVec.x, invY = 1/rayVec.y, invZ = 1/rayVec.z;
-        double a = rayVec.dot(rayVec);
-        Particle p; Vector diff = new Vector(Vector.ORIGIN);
+        Particle p;
 
-        BvhNode[] stack = new BvhNode[64];
         int head = 0;
+        intersection.intersectParticle = null;
+        intersection.intersectDist = Double.POSITIVE_INFINITY;
+        intersection.intersectPoint = null;
         stack[head++] = node;
         while(head>0){
             BvhNode current = stack[--head];
@@ -371,11 +375,11 @@ public class RayTracer extends Camera{
                     double b = 2*diff.dot(rayVec);
                     double c = diff.dot(diff) - p.rad*p.rad;
 
-                    double discriminant = b*b - 4*a*c;
+                    double discriminant = b*b - 4*c;
 
                     if(discriminant < 0) continue;
-                    double dist = (-b - Math.sqrt(discriminant))/(2*a);
-                    if(dist < 1e-9) dist = -dist - b/a;
+                    double dist = (-b - Math.sqrt(discriminant))/2;
+                    if(dist < 1e-9) dist = -dist - b;
 
                     if(dist < 1e-9) continue;
                     if(dist > intersection.intersectDist) continue;
