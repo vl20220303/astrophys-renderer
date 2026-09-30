@@ -192,82 +192,123 @@ public class RayTracer extends Camera{
 
     private BvhNode buildBvhNode(ArrayList<Particle> particles, int[] indices, int start, int count){
         BvhNode node = new BvhNode();
-        for(int i = start; i<start+count; i++){
+        for(int i = start; i < start + count; i++){
             Particle p = particles.get(indices[i]);
             node.minX = Math.min(node.minX, p.pos.x - p.rad);
             node.minY = Math.min(node.minY, p.pos.y - p.rad);
             node.minZ = Math.min(node.minZ, p.pos.z - p.rad);
-
             node.maxX = Math.max(node.maxX, p.pos.x + p.rad);
             node.maxY = Math.max(node.maxY, p.pos.y + p.rad);
             node.maxZ = Math.max(node.maxZ, p.pos.z + p.rad);
         }
-        
-        if(count <= LEAF_SIZE){
+
+        if (count <= LEAF_SIZE) {
             node.isLeaf = true;
             node.start = start;
             node.count = count;
             return node;
         }
 
-        double extentX = node.maxX - node.minX,
-               extentY = node.maxY - node.minY,
-               extentZ = node.maxZ - node.minZ;
-        double maxExtent = Math.max(extentX, Math.max(extentY, extentZ));
+        double extentX = node.maxX - node.minX;
+        double extentY = node.maxY - node.minY;
+        double extentZ = node.maxZ - node.minZ;
         int axis = 0;
-        if(maxExtent==extentY) axis = 1;
-        else if(maxExtent==extentZ) axis = 2;
+        if (extentY > extentX && extentY >= extentZ) axis = 1;
+        else if (extentZ > extentX && extentZ >= extentY) axis = 2;
 
-        quickSelect(particles, indices, start, start+count-1, axis);
-        
-        int leftSize = count/2, rightSize = count - leftSize;
+        sortRangeByAxis(particles, indices, start, count, axis);
 
-        node.left = buildBvhNode(particles, indices, start, leftSize);
-        node.right = buildBvhNode(particles, indices, start+leftSize, rightSize);
-        return node;
-    }
+        BvhNode[] leftBounds  = new BvhNode[count];
+        BvhNode[] rightBounds = new BvhNode[count];
 
-    private int partition(ArrayList<Particle> particles, int[] indices, int low, int high, int axis){
-        int mid = low + high >>> 1;
-        double pivot = axis == 0 ? particles.get(indices[mid]).pos.x : 
-                       axis == 1 ? particles.get(indices[mid]).pos.y : particles.get(indices[mid]).pos.z;
-        
-        while(low<=high){
-            while(true){
-                double p = axis == 0 ? particles.get(indices[low]).pos.x : 
-                           axis == 1 ? particles.get(indices[low]).pos.y : particles.get(indices[low]).pos.z;
-                if(p >= pivot) break;
-                low++;
-            }
+        BvhNode lb = new BvhNode();
+        for (int i = 0; i < count; i++) {
+            Particle p = particles.get(indices[start + i]);
+            lb.minX = Math.min(lb.minX, p.pos.x - p.rad);
+            lb.minY = Math.min(lb.minY, p.pos.y - p.rad);
+            lb.minZ = Math.min(lb.minZ, p.pos.z - p.rad);
+            lb.maxX = Math.max(lb.maxX, p.pos.x + p.rad);
+            lb.maxY = Math.max(lb.maxY, p.pos.y + p.rad);
+            lb.maxZ = Math.max(lb.maxZ, p.pos.z + p.rad);
+            leftBounds[i] = copyBounds(lb);
+        }
 
-            while(true){
-                double p = axis == 0 ? particles.get(indices[high]).pos.x : 
-                           axis == 1 ? particles.get(indices[high]).pos.y : particles.get(indices[high]).pos.z;
-                if(p <= pivot) break;
-                high--;
-            }
+        BvhNode rb = new BvhNode();
+        for (int i = count - 1; i >= 0; i--) {
+            Particle p = particles.get(indices[start + i]);
+            rb.minX = Math.min(rb.minX, p.pos.x - p.rad);
+            rb.minY = Math.min(rb.minY, p.pos.y - p.rad);
+            rb.minZ = Math.min(rb.minZ, p.pos.z - p.rad);
+            rb.maxX = Math.max(rb.maxX, p.pos.x + p.rad);
+            rb.maxY = Math.max(rb.maxY, p.pos.y + p.rad);
+            rb.maxZ = Math.max(rb.maxZ, p.pos.z + p.rad);
+            rightBounds[i] = copyBounds(rb);
+        }
 
-            if (low<=high){
-                int tmp = indices[low];
-                indices[low] = indices[high];
-                indices[high] = tmp;
-                low++;
-                high--;
+        double bestCost = Double.POSITIVE_INFINITY;
+        int bestSplit = -1;
+
+        double parentArea = surfaceArea(node);
+        double Ct = 1.0;
+        double Ci = 1.0;
+
+        for (int i = 1; i < count; i++) {
+            int leftCount  = i;
+            int rightCount = count - i;
+
+            double leftArea  = surfaceArea(leftBounds[i - 1]);
+            double rightArea = surfaceArea(rightBounds[i]);
+
+            double cost = parentArea > 0 ? Ct +
+                (leftArea  / parentArea) * leftCount  * Ci +
+                (rightArea / parentArea) * rightCount * Ci : Double.POSITIVE_INFINITY;
+
+            if (cost < bestCost) {
+                bestCost = cost;
+                bestSplit = i;
             }
         }
 
-        return low;
+        if(bestSplit < 1 || bestSplit >= count) bestSplit = count / 2;
+        int leftSize  = bestSplit;
+        int rightSize = count - bestSplit;
+
+        node.left  = buildBvhNode(particles, indices, start, leftSize);
+        node.right = buildBvhNode(particles, indices, start + leftSize, rightSize);
+        return node;
     }
 
-    private void quickSelect(ArrayList<Particle> particles, int[] indices, int low, int high, int axis){
-        int mid = (low + high) >>> 1;
-        while(low < high){
-            int pivotIdx = partition(particles, indices, low, high, axis);
-            if(mid < pivotIdx){
-                high = pivotIdx - 1;
-            } else{
-                low = pivotIdx;
+    private double surfaceArea(BvhNode n) {
+        double dx = n.maxX - n.minX;
+        double dy = n.maxY - n.minY;
+        double dz = n.maxZ - n.minZ;
+        return 2.0 * (dx*dy + dy*dz + dz*dx);
+    }
+
+    private BvhNode copyBounds(BvhNode source){
+        BvhNode copy = new BvhNode();
+        copy.minX = source.minX;
+        copy.minY = source.minY;
+        copy.minZ = source.minZ;
+        copy.maxX = source.maxX;
+        copy.maxY = source.maxY;
+        copy.maxZ = source.maxZ;
+        return copy;
+    }
+
+    private void sortRangeByAxis(ArrayList<Particle> particles, int[] indices, int start, int count, int axis){
+        for(int i = start + 1; i < start + count; i++){
+            int index = indices[i];
+            double value = axis == 0 ? particles.get(index).pos.x : axis == 1 ? particles.get(index).pos.y : particles.get(index).pos.z;
+            int j = i - 1;
+            while(j >= start){
+                int previousIndex = indices[j];
+                double previous = axis == 0 ? particles.get(previousIndex).pos.x : axis == 1 ? particles.get(previousIndex).pos.y : particles.get(previousIndex).pos.z;
+                if(previous <= value) break;
+                indices[j + 1] = previousIndex;
+                j--;
             }
+            indices[j + 1] = index;
         }
     }
 

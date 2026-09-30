@@ -100,12 +100,12 @@ public class Main {
         Thread simulatorThread = new Thread(simulator);
         simulatorThread.start();
 
-        Camera camera = new PerspectiveProjector(new Vector(0, 0, 1000));
-        camera.useGlow();
-        Renderer renderer = new Renderer(camera, simulator, environment);
-        JFrame frame = new JFrame("Astrophys Renderer");
-        renderer.init(frame);
-        renderer.run();
+        // Camera camera = new PerspectiveProjector(new Vector(0, 0, 1000));
+        // camera.useGlow();
+        // Renderer renderer = new Renderer(camera, simulator, environment);
+        // JFrame frame = new JFrame("Astrophys Renderer");
+        // renderer.init(frame);
+        // renderer.run();
 
         // Camera camera2 = new OrthographicProjector(new Vector(0, 0, 1000));
         // Renderer renderer2 = new Renderer(camera2, simulator, environment);
